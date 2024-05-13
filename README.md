@@ -38,7 +38,7 @@ conda activate nwb4fp
 pip install nwb4fp
 ```
 
-### Install spikeinterface
+## Install spikeinterface
 Most of the functions in this package depend on SpikeInterface, and they will be updated to stay in same with the latest version of SpikeInterface. 
 For more information about SpikeInterface, please refer to `https://github.com/SpikeInterface/spikeinterface`
 
