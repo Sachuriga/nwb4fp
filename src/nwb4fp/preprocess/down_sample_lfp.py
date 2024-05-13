@@ -5,7 +5,7 @@ import spikeinterface.extractors as se
 from spikeinterface.preprocessing import (bandpass_filter,
                                            common_reference,resample)
 from pathlib import Path
-from preprocess.down_sample import down_sample # type: ignore
+from nwb4fp.preprocess.down_sample import down_sample # type: ignore
 import numpy as np
 import probeinterface as pi
 from pathlib import Path
