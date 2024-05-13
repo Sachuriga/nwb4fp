@@ -25,6 +25,7 @@ src/nwb4fp/preprocess/get_path.py
 src/nwb4fp/preprocess/load_data.py
 src/nwb4fp/preprocess/run_phy.py
 src/nwb4fp/test/run_scripts/readnwb.py
+src/nwb4fp/test/run_scripts/readnwb_0283.py
 src/nwb4fp/test/run_scripts/readnwb_09PC.py
 src/nwb4fp/test/run_scripts/readnwb_09PD.py
 src/nwb4fp/test/run_scripts/test.py

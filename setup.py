@@ -18,6 +18,7 @@ setup(
     #packages=find_packages(./src/),    
     install_requires=read_requirements(),
 )
+
 if __name__ == "__main__":
     ## pip list --format=freeze > requirements.txt
     setuptools.setup()
