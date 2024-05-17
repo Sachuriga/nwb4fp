@@ -59,7 +59,14 @@ def test_qmnwb(animals,base_data_folder,project_name, file_suffix, temp_folder,s
                              idun_vedio_path)
 
 
-def run_qmnwb(animals,base_data_folder,project_name,file_suffix, sex,age,species,vedio_search_directory,path_save,temp_folder):
+def run_qmnwb(animals,
+              base_data_folder,
+              project_name,
+              file_suffix, 
+              sex,age,species,
+              vedio_search_directory,
+              path_save,temp_folder,
+              skip_qmr: bool = False):
     for indvi in animals:
         ID = indvi
         counter = 0
@@ -70,14 +77,18 @@ def run_qmnwb(animals,base_data_folder,project_name,file_suffix, sex,age,species
 
         for file in sorted_files:
             print(file)
-            qualitymetrix(file,temp_folder)
+            if skip_qmr:
+                pass
+            else:
+                qualitymetrix(file,temp_folder)
             add_wf_cor(fr"{file}_manual")
             nwbPHYnOPHYS(fr"{file}_manual",
                         sex,
                         age,
                         species,
                         vedio_search_directory,
-                        path_to_save_nwbfile = path_save)
+                        path_to_save_nwbfile = path_save,
+                        skip_qmr = skip_qmr) 
             counter += 1
             percent = counter/len(sorted_files)
             #wf4unim(fr"{file}_manual")

@@ -8,7 +8,8 @@ def main():
     base_path = Path("Q:/Sachuriga/Sachuriga_Python")
     base_data_folder = Path("S:/Sachuriga/")
     sex = "F"
-    animals = ["65588", "65409", "65410","65935"] 
+    #animals = ["65091","65165","65283","65409","65410","65588","65935"] 
+    animals = ["65091"] 
     age = "P45+"
     project_name = "CR_CA1"
     species = "Mus musculus"
@@ -28,7 +29,9 @@ def main():
               species,
               vedio_search_directory,
               path_save,
-              temp_folder)
+              temp_folder,
+              skip_qmr=True)
+
     
 if __name__ == "__main__":
     main()

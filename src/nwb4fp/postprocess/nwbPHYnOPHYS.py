@@ -29,7 +29,13 @@ def main():
     path_to_save_nwbfile = "S:/Sachuriga/nwb"
     nwbPHYnOPHYS(path, sex, ages, species, vedio_search_directory, path_to_save_nwbfile)  # Added missing argument
 
-def nwbPHYnOPHYS(path,sex,ages,species,vedio_search_directory,path_to_save_nwbfile):
+def nwbPHYnOPHYS(path,
+                 sex,
+                 ages,
+                 species,
+                 vedio_search_directory,
+                 path_to_save_nwbfile,
+                 skip_qmr: bool = False):
 
     if path.endswith("phy_k_manual"):
         num2cal = int(41)
@@ -120,9 +126,12 @@ def nwbPHYnOPHYS(path,sex,ages,species,vedio_search_directory,path_to_save_nwbfi
                         timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-100.Rhythm Data/sample_numbers.npy')
         
         print(folder_path)
-        time_spk = timestemp[sample_num]
-
-        np.save(fr"{folder1_path}/spike_times.npy",time_spk)
+        if skip_qmr:
+            print("passed replacing the spike times")
+            pass
+        else:
+            time_spk = timestemp[sample_num]
+            np.save(fr"{folder1_path}/spike_times.npy",time_spk)
         
         interface_phy = PhySortingInterface(folder_path=folder1_path, verbose=False)
         # For data provenance we add the time zone information to the conversionSS
@@ -160,8 +169,12 @@ def nwbPHYnOPHYS(path,sex,ages,species,vedio_search_directory,path_to_save_nwbfi
                         timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-100.Rhythm Data/sample_numbers.npy')
         
         print(folder_path)
-        time_spk = timestemp[sample_num]
-        np.save(fr"{folder1_path}/spike_times.npy",time_spk)
+        if skip_qmr:
+            print("passed replacing the spike times")
+            pass
+        else:
+            time_spk = timestemp[sample_num]
+            np.save(fr"{folder1_path}/spike_times.npy",time_spk)
         interface_phy = PhySortingInterface(folder_path=folder1_path, verbose=False)
         # For data provenance we add the time zone information to the conversionSS
         converter = ConverterPipe(data_interfaces=[interface_phy], verbose=False)    

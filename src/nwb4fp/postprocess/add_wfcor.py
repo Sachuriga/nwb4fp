@@ -10,11 +10,11 @@ def add_wf_cor(path):
 
     path_cluster_group = Path(fr"{path}/cluster_group.tsv")
     path_cluster_metrix = Path(fr"{path}/waveformsfm/extensions/quality_metrics/metrics.csv")
-    path_templates = Path(fr"{path}/waveformsfm/extensions/templates_metrics/metrics.csv")
+    path_templates = Path(fr"{path}/waveformsfm/extensions/template_metrics/metrics.csv")
     path_ulocation = Path(fr"{path}/waveformsfm/extensions/unit_locations/unit_locations.npy")
     df0 = pd.read_csv(path_cluster_group, index_col=0, sep='\t')
     df11 = pd.read_csv(path_cluster_metrix)
-    df111 = pd.read_csv(path_cluster_metrix)
+    df111 = pd.read_csv(path_templates)
     
     df1 = pd.merge(df11, df111,left_index=True,right_index=True)
     df2 = pd.DataFrame(np.load(path_ulocation),columns=['x', 'y','z'])
@@ -29,6 +29,9 @@ def add_wf_cor(path):
 
     merged_df = pd.DataFrame()
     # Loop through the filtered files, read each one, and append to the merged dataframe
+    file_path_save = Path(fr"{path}/cluster_info.tsv")
+    if file_path_save.exists():
+        file_path_save.unlink()
 
     for file in cluster_files:
         file_path = os.path.join(path, file)
@@ -37,8 +40,10 @@ def add_wf_cor(path):
         
     df5 =  pd.concat([df4,merged_df], axis=1)
     print(df0)
-    df5.to_csv(Path(fr"{path}/cluster_info.tsv"), 
+
+    df5.to_csv(file_path_save, 
                sep="\t", header=True, 
                index=True)
+    
 if __name__== "__main__":
     main()
