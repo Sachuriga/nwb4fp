@@ -20,6 +20,10 @@ def add_wf_cor(path):
     df2 = pd.DataFrame(np.load(path_ulocation),columns=['x', 'y','z'])
     df3 = pd.merge(df0, df1,left_index=True,right_index=True)
     df4 = pd.merge(df3, df2,left_index=True,right_index=True)
+    
+    file_path_save = Path(fr"{path}/cluster_info.tsv")
+    if file_path_save.exists():
+        file_path_save.unlink()
 
     # List all files in the current directory
     files = os.listdir(path)
@@ -29,9 +33,6 @@ def add_wf_cor(path):
 
     merged_df = pd.DataFrame()
     # Loop through the filtered files, read each one, and append to the merged dataframe
-    file_path_save = Path(fr"{path}/cluster_info.tsv")
-    if file_path_save.exists():
-        file_path_save.unlink()
 
     for file in cluster_files:
         file_path = os.path.join(path, file)

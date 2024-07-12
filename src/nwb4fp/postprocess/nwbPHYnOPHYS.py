@@ -240,25 +240,25 @@ def nwbPHYnOPHYS(path,
     # print(f"Body Directions: {bd}")
 
     position_spatial_series = SpatialSeries(
-        name="SpatialSeries",
+        name="XY",
         description="Position (x, y) in an open field.",
         data=arr_with_new_col[:,[3,4]],
         timestamps=arr_with_new_col[:,0],
         reference_frame="(0,0) is top left corner")
     
-    hd_direction_spatial_series = SpatialSeries(name="SpatialSeries",
+    hd_direction_spatial_series = SpatialSeries(name="HD",
                                              description="View angle of the subject measured in radians.",
                                              data=hd,
                                              timestamps=snout2neck[:,0],
                                              reference_frame="straight ahead",
                                              unit="radians",)
-    bd_direction_spatial_series = SpatialSeries(name="SpatialSeries",
+    bd_direction_spatial_series = SpatialSeries(name="BD",
                                              description="View angle of the subject measured in radians.",
                                              data=bd,
                                              timestamps=neck2back4[:,0],
                                              reference_frame="straight back",
                                              unit="radians",)
-    md_direction_spatial_series = SpatialSeries(name="SpatialSeries",
+    md_direction_spatial_series = SpatialSeries(name="MD",
                                              description="moving angle of the subject measured in radians.",
                                              data=md,
                                              timestamps=neck2back4[:,0],

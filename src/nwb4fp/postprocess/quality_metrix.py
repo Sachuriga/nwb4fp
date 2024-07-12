@@ -228,7 +228,7 @@ def qualitymetrix(path, temp_folder):
     qm_ext = analyzer1.compute(input={"principal_components": dict(n_components=10, mode="by_channel_local"),
                                 "quality_metrics": dict(skip_pc_metrics=False)})
     qm_data = analyzer1.get_extension("quality_metrics").get_data()
-    keep_mask = (qm_data["presence_ratio"] > 0.9) & (qm_data["isi_violations_ratio"] < 0.2) & (np.float64(qm_data["amplitude_median"]) < np.float64(-40.0)) & (qm_data["d_prime"]>3)& (qm_data["l_ratio"]<0.5)
+    keep_mask = (qm_data["presence_ratio"] > 0.9) & (qm_data["isi_violations_ratio"] < 0.2) & (np.float64(qm_data["amplitude_median"]) < np.float64(-50.0)) & (qm_data["d_prime"]>4)& (qm_data["l_ratio"]<0.05)
     q = sort_merge.get_property('quality')
     b=q
     b[keep_mask] = 'good'
@@ -237,7 +237,6 @@ def qualitymetrix(path, temp_folder):
     cluster_group = pd.DataFrame(
             {"cluster_id": [i for i in range(len(unit_ids))], "group": b}
         )
-
     # print(sort_merge.get_property_keys())
     # print(f"get times for merge sorts{sort_merge.get_times()}")
     # wfm = si.extract_waveforms(rec_save, sort_merge, folder=fr"{temp_folder}", overwrite=True, 
@@ -256,7 +255,16 @@ def qualitymetrix(path, temp_folder):
                       output_folder = path_iron,
                       remove_if_exists=True,
                       copy_binary=True)
+    
+    path_iron1 = Path(path + "_4match")
+    sex.export_to_phy(analyzer1,
+                      output_folder = path_iron1,
+                      remove_if_exists=True,
+                      copy_binary=False)
+    
+    cluster_group.to_csv(Path(path_iron1 / r"cluster_group.tsv"), sep="\t", index=False)
     cluster_group.to_csv(Path(path_iron / r"cluster_group.tsv"), sep="\t", index=False)
+
     phy_TRD = Path(path + "_manual_reports")
     sex.export_report(sorting_analyzer = analyzer1, output_folder=phy_TRD, remove_if_exists=True)
     analyzer1.save_as(folder=Path(path + "_manual/waveformsfm"), format="binary_folder")
@@ -266,6 +274,7 @@ def qualitymetrix(path, temp_folder):
         unit_groups = np.zeros(len(unit_ids), dtype="int32")
     channel_group = pd.DataFrame({"cluster_id": [i for i in range(len(unit_ids))], "channel_group": unit_groups})
     channel_group.to_csv(path_iron / "cluster_channel_group.tsv", sep="\t", index=False)
+    channel_group.to_csv(path_iron1 / "cluster_channel_group.tsv", sep="\t", index=False)
     print("channel_group")
     print(unit_groups)
     print("completet!!!!_export_to_phy_part")
