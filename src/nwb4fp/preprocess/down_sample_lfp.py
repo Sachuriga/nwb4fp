@@ -65,14 +65,13 @@ def down_sample_lfp(file_path,raw_path):
                                                                method='coherence+psd',
                                                                n_neighbors = 9)
     recording_good_channels_f = recp.remove_channels(bad_channel_ids)
-    lfp_n50 = spre.notch_filter(recording_good_channels_f, freq=50)
-    lfp_n60 = spre.notch_filter(lfp_n50,freq=60)
-    rec_lfp_car = common_reference(lfp_n60, reference='global', 
+
+    rec_lfp_car = common_reference(recording_good_channels_f, reference='global', 
                                operator='median', 
                                dtype='int16')
     
-    lfp_car = resample(rec_lfp_car, resample_rate=1000, margin_ms=100.0)
-    lfp = resample(lfp_n60, resample_rate=1000, margin_ms=100.0)
+    lfp_car = resample(rec_lfp_car, resample_rate=1250, margin_ms=100.0)
+    lfp = resample(recording_good_channels_f, resample_rate=1250, margin_ms=100.0)
     print(lfp_car.get_channel_ids())
 
     lfp_times = down_sample(recordingo.get_times(), lfp.get_num_samples())
@@ -144,11 +143,12 @@ def add_lfp2nwb(filename,channel2selec,folder1_path):
             name="lfp_raw",
             data=lfp_raw,
             electrodes=regions,
-            # starting_time=np.float64(lfp_times[0]),
-            rate=1000.0)
+            timestamps = lfp_times,
+            starting_time=lfp_times[0],
+            rate=1250.0)
         lfp = LFP(electrical_series=lfp_electrical_series)
         ecephys_module = read_nwbfile.create_processing_module(name="lfp_raw", 
-                                                        description="1-475Hz, 1000Hz sampling rate, raw extracellular electrophysiology data")
+                                                        description="1-475Hz, 1250Hz sampling rate, raw extracellular electrophysiology data")
         ecephys_module.add(lfp)
         
         #np_lfp = read_nwbfile.modules["ecephys_raw"].data_interfaces['LFP']['lfp_raw']
@@ -156,14 +156,15 @@ def add_lfp2nwb(filename,channel2selec,folder1_path):
         #df = pd.DataFrame(np_lfp.data, columns = ch)
         #print(df)
         ecephys_car_module = read_nwbfile.create_processing_module(name="lfp_car", 
-                                                        description="1-475Hz, 1000Hz sampling rate, common average reference extracellular electrophysiology data")
+                                                        description="1-475Hz, 1250Hz sampling rate, common average reference extracellular electrophysiology data")
 
         lfp_car_electrical_series = ElectricalSeries(
             name="lfp_car",
             data=lfp_car,
             electrodes=regions,
-            #starting_time=np.float64(lfp_times[0]),
-            rate=1000.0)
+            timestamps = lfp_times,
+            starting_time=lfp_times[0],
+            rate=1250.0)
         lfp_car = LFP(electrical_series=lfp_car_electrical_series)
         ecephys_car_module.add(lfp_car)
         

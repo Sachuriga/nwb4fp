@@ -10,7 +10,7 @@ def read_requirements():
             return [line.strip() for line in req if line.strip() and not line.startswith('#')]
 setup(
     name='nwb4fp',
-    version='0.6.4.0',
+    version='0.6.4.7',
     url='https://github.com/sachuriga/QuattrocoloLab-nwb4fp',
     author='sachuriga',
     author_email='sachuriga.sachuriga@ntnu.no',
@@ -22,3 +22,6 @@ setup(
 if __name__ == "__main__":
     ## pip list --format=freeze > requirements.txt
     setuptools.setup()
+
+# python setup.py sdist bdist_wheel
+# twine upload dist/*

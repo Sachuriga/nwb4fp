@@ -290,7 +290,11 @@ def calc_head_direction(positions):
     y2 = positions[:, 4]
 
     hd = np.remainder(np.arctan2(y2-y1, x2-x1) * 180 / np.pi + 180, 360)
-    return hd
+    return degrees_to_pi_range(hd)
+
+def degrees_to_pi_range(degrees):
+    radians = np.radians(degrees)
+    return radians
 
 def moving_direction(pos, window_points=[1, 1], step=1):
     newPos = pos.copy()
@@ -315,7 +319,7 @@ def moving_direction(pos, window_points=[1, 1], step=1):
         md = np.full((num_samples, 1), np.nan)
         md[mdInd, 0] = calc_direction(pos[:, 1], pos[:, 2], kernel, mdInd)
 
-    return md, newPos
+    return degrees_to_pi_range(md), newPos
 
 def calc_direction(x, y, kernel, ind):
     X = np.convolve(x, kernel, 'same')[ind]
