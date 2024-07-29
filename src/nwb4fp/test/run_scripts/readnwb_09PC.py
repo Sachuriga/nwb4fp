@@ -30,7 +30,7 @@ def main():
               vedio_search_directory,
               path_save,
               temp_folder,
-              skip_qmr=False)
+              skip_qmr=True)
 
     
 if __name__ == "__main__":

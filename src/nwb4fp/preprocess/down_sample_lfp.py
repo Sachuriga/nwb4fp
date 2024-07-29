@@ -143,7 +143,6 @@ def add_lfp2nwb(filename,channel2selec,folder1_path):
             name="lfp_raw",
             data=lfp_raw,
             electrodes=regions,
-            timestamps = lfp_times,
             starting_time=lfp_times[0],
             rate=1250.0)
         lfp = LFP(electrical_series=lfp_electrical_series)
@@ -162,7 +161,6 @@ def add_lfp2nwb(filename,channel2selec,folder1_path):
             name="lfp_car",
             data=lfp_car,
             electrodes=regions,
-            timestamps = lfp_times,
             starting_time=lfp_times[0],
             rate=1250.0)
         lfp_car = LFP(electrical_series=lfp_car_electrical_series)
