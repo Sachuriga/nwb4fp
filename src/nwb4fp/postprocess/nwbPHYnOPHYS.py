@@ -41,7 +41,6 @@ def nwbPHYnOPHYS(path,
         num2cal = int(41)
     elif path.endswith("phy_k"):
         num2cal = int(35)
-
     temp = path[0 - num2cal:]
     path1 = temp.split("/")
 
@@ -122,8 +121,12 @@ def nwbPHYnOPHYS(path,
                         folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 102"
                         timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-101.Rhythm Data/sample_numbers.npy')
                     except FileNotFoundError:
-                        folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 101"
-                        timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-100.Rhythm Data/sample_numbers.npy')
+                        try:
+                            folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 102"
+                            timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-117.Rhythm Data/sample_numbers.npy')
+                        except FileNotFoundError:
+                            folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 101"
+                            timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-100.Rhythm Data/sample_numbers.npy')
         
         print(folder_path)
         if skip_qmr:
@@ -165,8 +168,12 @@ def nwbPHYnOPHYS(path,
                         folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 102"
                         timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-101.Rhythm Data/sample_numbers.npy')
                     except FileNotFoundError:
-                        folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 101"
-                        timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-100.Rhythm Data/sample_numbers.npy')
+                        try:
+                            folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 102"
+                            timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-117.Rhythm Data/sample_numbers.npy')
+                        except FileNotFoundError:
+                            folder_path = fr"{ECEPHY_DATA_PATH}/Record Node 101"
+                            timestemp = np.load(fr'{folder_path}/experiment1/recording1/continuous/OE_FPGA_Acquisition_Board-100.Rhythm Data/sample_numbers.npy')
         
         print(folder_path)
         if skip_qmr:
@@ -238,14 +245,31 @@ def nwbPHYnOPHYS(path,
     # print(f"moving Directions: {md.shape}")
     # print(f"Head Directions: {hd}")
     # print(f"Body Directions: {bd}")
+    nwbfile = NWBFile(
+        session_description="Mouse exploring an open field",  # required
+        identifier="sachuriga",  # required
+        session_start_time=datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles")))  # required)
+    behavior_module = nwbfile.create_processing_module(name="Behavioral data", 
+                                                        description="position, head direction, and body direction of the mouse in an open field.")
+
+    position_snout = SpatialSeries(
+        name="XY",
+        description="Position of snout (x, y) in an open field.",
+        data=arr_with_new_col[:,[1,2]],
+        timestamps=arr_with_new_col[:,0],
+        reference_frame="(0,0) is top left corner")
+    position_s = Position(spatial_series = position_snout, name='Snout_position')
+    behavior_module.add(position_s)
 
     position_spatial_series = SpatialSeries(
-        name="XY",
+        name="XY_snout",
         description="Position (x, y) in an open field.",
         data=arr_with_new_col[:,[3,4]],
         timestamps=arr_with_new_col[:,0],
         reference_frame="(0,0) is top left corner")
-    
+    position = Position(spatial_series=position_spatial_series, name='Neck_postition')
+    behavior_module.add(position)
+
     hd_direction_spatial_series = SpatialSeries(name="HD",
                                              description="View angle of the subject measured in radians.",
                                              data=hd,
@@ -265,15 +289,9 @@ def nwbPHYnOPHYS(path,
                                              reference_frame="moving direction",
                                              unit="radians",)   
 
-    nwbfile = NWBFile(
-        session_description="Mouse exploring an open field",  # required
-        identifier="sachuriga",  # required
-        session_start_time=datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles")))  # required)
-    behavior_module = nwbfile.create_processing_module(name="Behavioral data", 
-                                                        description="position, head direction, and body direction of the mouse in an open field.")
+    
     #ehavior_module = ProcessingModule(name="behavior", description="processed behavioral data")
-    position = Position(spatial_series=position_spatial_series, name='Position in pixel')
-    behavior_module.add(position)
+    
     hd_direction = CompassDirection(spatial_series=hd_direction_spatial_series, name="Head(snout2neck)_Direction")
     bd_direction = CompassDirection(spatial_series=bd_direction_spatial_series, name="Body(neck2back4)_Direction")
     md_direction = CompassDirection(spatial_series=md_direction_spatial_series, name="Moving_Direction")

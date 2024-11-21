@@ -33,8 +33,12 @@ def down_sample_lfp(file_path,raw_path):
             stream_name = 'Record Node 102#OE_FPGA_Acquisition_Board-101.Rhythm Data'
             recordingo = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
         except AssertionError:
-            stream_name = 'Record Node 101#Acquisition_Board-100.Rhythm Data'
-            recordingo = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
+            try:
+                stream_name = 'Record Node 102#OE_FPGA_Acquisition_Board-117.Rhythm Data'
+                recordingo = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
+            except AssertionError:
+                stream_name = 'Record Node 101#Acquisition_Board-100.Rhythm Data'
+                recordingo = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
 
 
     # from probeinterface import plotting
@@ -70,8 +74,8 @@ def down_sample_lfp(file_path,raw_path):
                                operator='median', 
                                dtype='int16')
     
-    lfp_car = resample(rec_lfp_car, resample_rate=1250, margin_ms=100.0)
-    lfp = resample(recording_good_channels_f, resample_rate=1250, margin_ms=100.0)
+    lfp_car = resample(rec_lfp_car, resample_rate=1000, margin_ms=100.0)
+    lfp = resample(recp, resample_rate=1000, margin_ms=100.0)
     print(lfp_car.get_channel_ids())
 
     lfp_times = down_sample(recordingo.get_times(), lfp.get_num_samples())
@@ -89,7 +93,8 @@ def down_sample_lfp(file_path,raw_path):
     #                                          'CH53', 'CH58', 'CH64',
     #                                          'CH47', 'CH36', 'CH56'])
     origin = recording_prb.get_property('channel_name')
-    new = recording_good_channels_f.get_property('channel_name')
+    #new = recording_good_channels_f.get_property('channel_name')
+    new = recording_prb.get_property('channel_name')
     region = []
     for id in new:
         region.append(np.int32(np.where(origin==id)[0])[0])
@@ -144,10 +149,10 @@ def add_lfp2nwb(filename,channel2selec,folder1_path):
             data=lfp_raw,
             electrodes=regions,
             starting_time=lfp_times[0],
-            rate=1250.0)
+            rate=1000.0)
         lfp = LFP(electrical_series=lfp_electrical_series)
         ecephys_module = read_nwbfile.create_processing_module(name="lfp_raw", 
-                                                        description="1-475Hz, 1250Hz sampling rate, raw extracellular electrophysiology data")
+                                                        description="1-475Hz, 1000Hz sampling rate, raw extracellular electrophysiology data")
         ecephys_module.add(lfp)
         
         #np_lfp = read_nwbfile.modules["ecephys_raw"].data_interfaces['LFP']['lfp_raw']
@@ -155,14 +160,14 @@ def add_lfp2nwb(filename,channel2selec,folder1_path):
         #df = pd.DataFrame(np_lfp.data, columns = ch)
         #print(df)
         ecephys_car_module = read_nwbfile.create_processing_module(name="lfp_car", 
-                                                        description="1-475Hz, 1250Hz sampling rate, common average reference extracellular electrophysiology data")
+                                                        description="1-475Hz, 1000Hz sampling rate, common average reference extracellular electrophysiology data")
 
         lfp_car_electrical_series = ElectricalSeries(
             name="lfp_car",
             data=lfp_car,
             electrodes=regions,
             starting_time=lfp_times[0],
-            rate=1250.0)
+            rate=1000.0)
         lfp_car = LFP(electrical_series=lfp_car_electrical_series)
         ecephys_car_module.add(lfp_car)
         
