@@ -16,6 +16,8 @@ src/nwb4fp/postprocess/get_potential_merge.py
 src/nwb4fp/postprocess/lfp_channel.py
 src/nwb4fp/postprocess/nwbPHYnOPHYS.py
 src/nwb4fp/postprocess/quality_metrix.py
+src/nwb4fp/postprocess/analysis/phase_precession/__init__.py
+src/nwb4fp/postprocess/analysis/tSC/__init__.py
 src/nwb4fp/preprocess/__init__.py
 src/nwb4fp/preprocess/copy_file.py
 src/nwb4fp/preprocess/down_sample.py

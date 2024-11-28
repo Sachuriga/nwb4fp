@@ -40,7 +40,6 @@ def down_sample_lfp(file_path,raw_path):
                 stream_name = 'Record Node 101#Acquisition_Board-100.Rhythm Data'
                 recordingo = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
 
-
     # from probeinterface import plotting
     manufacturer = 'cambridgeneurotech'
     probe_name = 'ASSY-236-F'

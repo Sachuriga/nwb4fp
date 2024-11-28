@@ -8,7 +8,7 @@ def main():
     base_path = Path("Q:/Sachuriga/Sachuriga_Python")
     base_data_folder = Path("S:/Sachuriga/")
     sex = "F"
-    animals = ["65165","65091","65588"] 
+    animals = ["65588"] 
     #animals = ["65165","65091","65283","65409","65410",] 
     age = "P45+"
     project_name = "CR_CA1"
@@ -19,7 +19,6 @@ def main():
     save_path_test=(r"S:\Sachuriga/Ephys_Recording/4nwb_check.csv")
     file_suffix = "phy_k"
     idun_vedio_path=r"P:/Overlap_project/data/CR_implant_add_new"
-
     run_qmnwb(animals,
               base_data_folder,
               project_name,
@@ -31,7 +30,6 @@ def main():
               path_save,
               temp_folder,
               skip_qmr=True)
-
     
 if __name__ == "__main__":
     main()
