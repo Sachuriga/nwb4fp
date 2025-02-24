@@ -289,7 +289,15 @@ def nwbPHYnOPHYS(path,
                                              reference_frame="moving direction",
                                              unit="radians",)   
 
-    
+    lfp_times = np.load(fr"{folder1_path}/lfp_times.npy")
+
+    hd_direction_spatial_series = SpatialSeries(name="lfp_times",
+                                             description="lfp_times",
+                                             data=lfp_times,
+                                             timestamps=lfp_times ,
+                                             reference_frame="start of aquisitions",
+                                             unit="secounds")
+
     #ehavior_module = ProcessingModule(name="behavior", description="processed behavioral data")
     
     hd_direction = CompassDirection(spatial_series=hd_direction_spatial_series, name="Head(snout2neck)_Direction")
