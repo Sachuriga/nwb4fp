@@ -25,8 +25,8 @@ def get_potential_merge(sorting, wf):
     else:
         clean_sorting=sorting
     # handle the case when there are no units to merge
-    clean_sorting = remove_redundant_units(clean_sorting)
-    clean_sorting = remove_excess_spikes(clean_sorting)
+    #clean_sorting = remove_redundant_units(clean_sorting)
+   
     return remove_duplicated_spikes(clean_sorting)
 
 if __name__ == "__main__":

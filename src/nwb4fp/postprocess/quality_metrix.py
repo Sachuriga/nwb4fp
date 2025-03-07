@@ -351,6 +351,7 @@ def qualitymetrix(path, temp_folder):
     print("processing potential merge...\n")
     
     sort_merge = get_potential_merge(sorting, analyzer)
+    sort_merge = si.curation.remove_excess_spikes(sort_merge,rec_w)
     sort_merge.set_property(key='group', values = sort_merge.get_property("channel_group"))
 
     ## Step to creating analyzers
