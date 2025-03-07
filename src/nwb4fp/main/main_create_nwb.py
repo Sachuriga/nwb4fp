@@ -2,8 +2,8 @@ from pathlib import Path
 import string
 import sys
 from nwb4fp.preprocess.load_data import load_data
-from nwb4fp.postprocess.quality_metrix import (qualitymetrix, test_clusterInfo)
-from nwb4fp.postprocess.nwbPHYnOPHYS import nwbPHYnOPHYS
+from nwb4fp.postprocess.quality_metrix import (qualitymetrix, test_clusterInfo,test_quality)
+from nwb4fp.postprocess.nwbPHYnOPHYS import nwbPHYnOPHYS,OE_DLC2nwb
 from nwb4fp.postprocess.add_wfcor import add_wf_cor
 from nwb4fp.postprocess.extract_wf import wf4unim
 
@@ -39,7 +39,7 @@ def main():
     temp_folder = Path(r'C:/temp_waveform/')
     run_qmnwb(animals,base_data_folder,sex,age,species,vedio_search_directory,path_save,temp_folder)
 
-def test_qmnwb(animals,base_data_folder,project_name, file_suffix, temp_folder,save_path_test,vedio_search_directory,idun_vedio_path):
+def test_qmnwb(animals,base_data_folder,project_name, file_suffix, temp_folder,save_path_test,vedio_search_directory,idun_vedio_path,post_fix_dlc: str = None):
     import pandas as pd
     df = pd.DataFrame(columns=['File', 'competability','dlc_model', 'video_name','video_file'])
     df.to_csv(save_path_test, index=False)
@@ -52,11 +52,11 @@ def test_qmnwb(animals,base_data_folder,project_name, file_suffix, temp_folder,s
         sorted_files = load_data(folder_path, file_suffix=fr"{file_suffix}")
 
         for file in sorted_files:
-            test_clusterInfo(file,
+            test_quality(file,
                              temp_folder,
                              save_path_test,
                              vedio_search_directory,
-                             idun_vedio_path)
+                             idun_vedio_path,post_fix_dlc)
 
 
 def run_qmnwb(animals,
@@ -66,7 +66,9 @@ def run_qmnwb(animals,
               sex,age,species,
               vedio_search_directory,
               path_save,temp_folder,
-              skip_qmr: bool = False):
+              skip_qmr: bool = False,
+              skip_lfp: bool = False,
+              post_fix_dlc: str = None):
     for indvi in animals:
         ID = indvi
         counter = 0
@@ -81,14 +83,30 @@ def run_qmnwb(animals,
                 pass
             else:
                 qualitymetrix(file,temp_folder)
-            add_wf_cor(fr"{file}_manual")
-            nwbPHYnOPHYS(fr"{file}_manual",
+
+            if skip_lfp:
+                pass
+            else:
+                add_wf_cor(fr"{file}_manual")
+
+            OE_DLC2nwb(fr"{file}_manual",
                         sex,
                         age,
                         species,
                         vedio_search_directory,
                         path_to_save_nwbfile = path_save,
-                        skip_qmr = skip_qmr) 
+                        skip_qmr = skip_qmr,
+                        skip_lfp=skip_lfp,
+                        post_fix_dlc = post_fix_dlc)
+            
+            # nwbPHYnOPHYS(fr"{file}_manual",
+            #             sex,
+            #             age,
+            #             species,
+            #             vedio_search_directory,
+            #             path_to_save_nwbfile = path_save,
+            #             skip_qmr = skip_qmr,
+            #             post_fix_dlc = post_fix_dlc) 
             counter += 1
             percent = counter/len(sorted_files)
             #wf4unim(fr"{file}_manual")

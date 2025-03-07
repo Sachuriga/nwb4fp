@@ -19,13 +19,20 @@ import numpy as np
 import pandas as pd
 import spikeinterface.preprocessing as spre
 import spikeinterface as si
+from spikeinterface.extractors.neoextractors.openephys import OpenEphysBinaryRecordingExtractor
 
 def main():
     print(main)
 
 def down_sample_lfp(file_path,raw_path):
+    GLOBAL_KWARGS = dict(n_jobs=12, total_memory="64G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    si.set_global_job_kwargs(**GLOBAL_KWARGS)
     #raw_path = r'S:\Sachuriga/Ephys_Recording/CR_CA1/65409/65409_2023-12-04_15-42-35_A'
-    stream_name = 'Record Node 101#OE_FPGA_Acquisition_Board-100.Rhythm Data'
+    stream_name  = OpenEphysBinaryRecordingExtractor(raw_path).get_streams(raw_path)[0][0]
+    print(fr"Merging step_Before mannual search the stream_name. Auto search result is {stream_name}")
+    record_node = stream_name.split("#")[0]
+    print(fr"LFP downsampling steps. Auto search result is {stream_name}")
+    #stream_name = 'Record Node 101#OE_FPGA_Acquisition_Board-100.Rhythm Data'
     try:
         recordingo = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
     except AssertionError:
@@ -68,7 +75,8 @@ def down_sample_lfp(file_path,raw_path):
                                                                method='coherence+psd',
                                                                n_neighbors = 9)
     recording_good_channels_f = recp.remove_channels(bad_channel_ids)
-
+    # recording_good_channels_f = spre.interpolate_bad_channels (recp,bad_channel_ids)
+    # recording_good_channels_f = recording_good_channels_f.set_probe(probe, group_mode="by_shank")
     rec_lfp_car = common_reference(recording_good_channels_f, reference='global', 
                                operator='median', 
                                dtype='int16')
@@ -91,9 +99,9 @@ def down_sample_lfp(file_path,raw_path):
     #                                          'CH59', 'CH54', 'CH51',
     #                                          'CH53', 'CH58', 'CH64',
     #                                          'CH47', 'CH36', 'CH56'])
-    origin = recording_prb.get_property('channel_name')
+    origin = recording_prb.get_property('channel_names')
     #new = recording_good_channels_f.get_property('channel_name')
-    new = recording_prb.get_property('channel_name')
+    new = recording_prb.get_property('channel_names')
     region = []
     for id in new:
         region.append(np.int32(np.where(origin==id)[0])[0])
@@ -117,13 +125,12 @@ def down_sample_lfp(file_path,raw_path):
 
 def load_lfp2mem(lfp):
     from pathlib import Path
-    job_kwargs = dict(n_jobs=12,
-                              chunk_duration="5s",
-                              progress_bar=True)
+    GLOBAL_KWARGS = dict(n_jobs=12, total_memory="64G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    si.set_global_job_kwargs(**GLOBAL_KWARGS)
     print("processing lfp data...")
     base_folder = Path("C:/temp_lfp")
     preprocessed = "_" + "preprocessed_temp"
-    lfp.save(folder=base_folder / preprocessed, overwrite=True, **job_kwargs)
+    lfp.save(folder=base_folder / preprocessed, overwrite=True)
     # print(fr"LFP shape is {lfp.shape}")
     recording_rec = si.load_extractor(base_folder / preprocessed)
     return recording_rec
