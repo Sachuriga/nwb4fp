@@ -28,7 +28,7 @@ def down_sample_lfp(file_path,raw_path):
     GLOBAL_KWARGS = dict(n_jobs=12, total_memory="64G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
     si.set_global_job_kwargs(**GLOBAL_KWARGS)
     #raw_path = r'S:\Sachuriga/Ephys_Recording/CR_CA1/65409/65409_2023-12-04_15-42-35_A'
-    stream_name  = OpenEphysBinaryRecordingExtractor(raw_path).get_streams(raw_path)[0][0]
+    stream_name  = OpenEphysBinaryRecordingExtractor(raw_path,stream_id='0').get_streams(raw_path)[0][0]
     print(fr"Merging step_Before mannual search the stream_name. Auto search result is {stream_name}")
     record_node = stream_name.split("#")[0]
     print(fr"LFP downsampling steps. Auto search result is {stream_name}")

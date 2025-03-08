@@ -56,7 +56,7 @@ def nwbPHYnOPHYS(path,
 
 
     ECEPHY_DATA_PATH = file[0]
-    stream_name  = OpenEphysBinaryRecordingExtractor(ECEPHY_DATA_PATH).get_streams(ECEPHY_DATA_PATH)[0][0]
+    stream_name  = OpenEphysBinaryRecordingExtractor(ECEPHY_DATA_PATH,stream_id='0').get_streams(ECEPHY_DATA_PATH)[0][0]
     print(fr"Merging step_Before mannual search the stream_name. Auto search result is {stream_name}")
     record_node = stream_name.split("#")[0]
     aquisition_sys = stream_name.split("#")[1]

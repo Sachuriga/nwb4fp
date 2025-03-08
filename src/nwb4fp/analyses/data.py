@@ -5,6 +5,22 @@ import spatial_maps.maps as mapp
 import ast
 import pandas as pd
 
+def find_run_indices(speed_vector, threshold=0.05):
+    starts = []
+    stops = []
+    is_running = False
+    for i, speed in enumerate(speed_vector):
+        if speed > threshold and not is_running:
+            starts.append(i)
+            is_running = True
+        elif speed <= threshold and is_running:
+            stops.append(i - 1)
+            is_running = False
+    if is_running:  # If still running at the end
+        stops.append(len(speed_vector) - 1)
+    return starts, stops
+
+
 def unit_location_ch(file_path:str=r"Q:\sachuriga\Sachuriga_Python/quattrocolo-nwb4fp/ASSY-236-F.prb", x_input: float = 0.0, y_input: float = 0.0):
 
     # Read the file and parse the dictionary

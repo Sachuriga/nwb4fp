@@ -12,7 +12,7 @@ def main():
     base_data_folder = Path("S:/Sachuriga/")
     sex = "F"
     #animals = ["66537", "66538", "66539"] 
-    animals = ["63383", "63385", "65091", "65165", "65283", "65588", "66537", "66538", "66539", "66922", "65622"] 
+    animals = ["65283", "65588", "66537", "66538", "66539", "66922", "65622"] 
     #animals = ["66539", "66538", "66537"]
     
     age = "P45+"
@@ -36,19 +36,21 @@ def main():
     #            idun_vedio_path=idun_vedio_path,
     #            post_fix_dlc = post_fix_dlc)
 
+
     run_qmnwb(animals,
-              base_data_folder,
-              project_name,
-              file_suffix,
-              sex,
-              age,
-              species,
-              vedio_search_directory,
-              path_save,
-              temp_folder,
-              skip_qmr=False,
-              skip_lfp=False,
-              post_fix_dlc = post_fix_dlc)
-    
+            base_data_folder,
+            project_name,
+            file_suffix,
+            sex,
+            age,
+            species,
+            vedio_search_directory,
+            path_save,
+            temp_folder,
+            skip_qmr=False,
+            skip_lfp=False,
+            post_fix_dlc = post_fix_dlc)
+
+
 if __name__ == "__main__":
     main()
