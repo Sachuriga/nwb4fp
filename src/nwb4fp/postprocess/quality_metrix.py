@@ -381,7 +381,7 @@ def qualitymetrix(path, temp_folder):
     qm_ext = analyzer1.compute(input={"principal_components": dict(n_components=10, mode="by_channel_local"),
                                 "quality_metrics": dict(skip_pc_metrics=False)})
     qm_data = analyzer1.get_extension("quality_metrics").get_data()
-    keep_mask = (qm_data["presence_ratio"] > 0.9) & (qm_data["isi_violations_ratio"] < 0.2) & (np.float64(qm_data["amplitude_median"]) < np.float64(-50.0)) & (qm_data["d_prime"]>4)& (qm_data["l_ratio"]<0.05)
+    keep_mask = (qm_data["isi_violations_ratio"] < 0.2) & (np.float64(qm_data["amplitude_median"]) < np.float64(-40.0)) & (qm_data["l_ratio"]<0.05)
     q = sort_merge.get_property('quality')
     b=q
     b[keep_mask] = 'good'

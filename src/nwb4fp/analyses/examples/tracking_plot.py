@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import math
 from scipy.ndimage.measurements import center_of_mass
-import spatial_maps.maps as mapp
+import nwb4fp.analyses.maps as mapp
 
 def plot_path(x, y, t, box_size, spike_times=None,
               color='grey', alpha=0.5, origin='upper',
@@ -161,7 +161,7 @@ def plot_head_direction_rate(spike_times, ang_bins, rate_in_ang, projection='pol
 
 def plot_ratemap(x, y, t, spike_times, box_size=[1.0, 1.0], bin_size=0.05,
                  vmin=0, ax=None, smoothing=.05,
-                 origin='upper', cmap='viridis'):
+                 origin='upper', cmap='hot'):
     """
 
 
@@ -186,7 +186,43 @@ def plot_ratemap(x, y, t, spike_times, box_size=[1.0, 1.0], bin_size=0.05,
     print("here")
     maps = mapp.SpatialMap(box_size=box_size, bin_size=bin_size,smoothing=smoothing)
     rate_map = maps.rate_map(x, y, t, spike_times)
-    plt.figure(figsize=(6,6))
+    #plt.figure(figsize=(6,6))
+    ax.imshow(rate_map, interpolation='none', origin=origin,
+              extent=(0, 1, 0, 1), vmin=vmin, cmap=cmap,ax=ax)
+    ax.set_title('%.2f Hz' % np.nanmax(rate_map))
+    ax.grid(False)
+    return ax
+
+
+def plot_ratemap_ax(x, y, t, spike_times, box_size=[1.0, 1.0], bin_size=0.05, vmin=0, 
+                 ax=None, smoothing=0.05, origin='upper', cmap='hot'):
+    """
+    Parameters
+    ----------
+    x : 1d vector of x positions
+    y : 1d vector of y positions
+    t : 1d vector of time at x, y positions
+    spike_times : array
+    box_size : size of spatial domain [width, height]
+    bin_size : size of spatial 2d square bins
+    vmin : color min
+    ax : matplotlib axes (if None, creates a new figure)
+    smoothing : Gaussian smoothing sigma
+    origin : 'upper' or 'lower' for imshow
+    cmap : colormap for imshow
+
+    Returns
+    -------
+    out : axes
+    """
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111, xlim=[0, 1], ylim=[0, 1], aspect=1)
+    
+    maps = mapp.SpatialMap(box_size=box_size, bin_size=bin_size, smoothing=smoothing)
+    rate_map = maps.rate_map(x, y, t, spike_times)
+    
+    # 在指定的 ax 上绘制 imshow
     ax.imshow(rate_map, interpolation='none', origin=origin,
               extent=(0, 1, 0, 1), vmin=vmin, cmap=cmap)
     ax.set_title('%.2f Hz' % np.nanmax(rate_map))

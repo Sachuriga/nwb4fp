@@ -1,7 +1,7 @@
 from scipy.ndimage import gaussian_filter1d
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-import spatial_maps.maps as mapp
+import nwb4fp.analyses.maps as mapp
 import ast
 import pandas as pd
 
