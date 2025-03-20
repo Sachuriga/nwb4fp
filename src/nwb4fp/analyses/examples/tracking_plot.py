@@ -227,7 +227,7 @@ def plot_ratemap_ax(x, y, t, spike_times, box_size=[1.0, 1.0], bin_size=0.05, vm
               extent=(0, 1, 0, 1), vmin=vmin, cmap=cmap)
     ax.set_title('%.2f Hz' % np.nanmax(rate_map))
     ax.grid(False)
-    return ax
+    return rate_map
 
 
 def plot_occupancy(x, y, t, bin_size=0.05, box_size=1,

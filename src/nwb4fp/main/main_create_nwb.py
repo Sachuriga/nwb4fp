@@ -69,6 +69,7 @@ def run_qmnwb(animals,
               path_save,temp_folder,
               skip_qmr: bool = False,
               skip_lfp: bool = False,
+              skip_nwb: bool = False,
               post_fix_dlc: str = None):
     # for indvi in animals:
     #     ID = indvi
@@ -136,16 +137,18 @@ def run_qmnwb(animals,
                     pass
                 else:
                     add_wf_cor(fr"{file}_manual")
-
-                OE_DLC2nwb(fr"{file}_manual",
-                        sex,
-                        age,
-                        species,
-                        vedio_search_directory,
-                        path_to_save_nwbfile = path_save,
-                        skip_qmr = skip_qmr,
-                        skip_lfp = skip_lfp,
-                        post_fix_dlc = post_fix_dlc)
+                if skip_nwb:
+                    pass
+                else:
+                    OE_DLC2nwb(fr"{file}_manual",
+                            sex,
+                            age,
+                            species,
+                            vedio_search_directory,
+                            path_to_save_nwbfile = path_save,
+                            skip_qmr = skip_qmr,
+                            skip_lfp = skip_lfp,
+                            post_fix_dlc = post_fix_dlc)
                 
                 # nwbPHYnOPHYS(fr"{file}_manual",
                 #             sex,

@@ -4,6 +4,9 @@ from sklearn.preprocessing import MinMaxScaler
 import nwb4fp.analyses.maps as mapp
 import ast
 import pandas as pd
+import numpy as np
+from scipy import signal
+from scipy.stats import pearsonr
 
 def find_run_indices(speed_vector, threshold=0.05):
     starts = []
@@ -98,7 +101,7 @@ def pos2speed(t,x,y,filter_speed=True,min_speed=0.05):
         mask = (speeds>=min_speed)
         filtered_smoothed_speed = smoothed_speed[mask]
         filtered_speeds = speeds[mask]
-        valid_mask = (speeds>=0)
+        valid_mask = (speeds>=0.05)
 
 
     xx=x
@@ -156,3 +159,201 @@ def get_filed_num(matrix):
     return [v for v in distinct_values]
 
 #def spikes2phase(theta_phase,t,spikestime):
+
+import numpy as np
+from scipy import stats
+
+import numpy as np
+
+def calculate_spatial_coherence(place_field_map):
+    """
+    Calculate spatial coherence of a place field map based on Muller and Kubie (1989).
+    Measures first-order spatial autocorrelation without smoothing.
+    
+    Parameters:
+    place_field_map : 2D numpy array
+        The place field map with firing rates
+    
+    Returns:
+    float : Spatial coherence value
+    """
+    # Convert to float and handle potential NaN values
+    fmap = np.array(place_field_map, dtype=float)
+    if np.all(np.isnan(fmap)):
+        return np.nan
+        
+    # Get dimensions
+    rows, cols = fmap.shape
+    
+    # Create arrays to store values for correlation
+    center_values = []
+    neighbor_means = []
+    
+    # Iterate through each pixel (excluding borders)
+    for i in range(1, rows-1):
+        for j in range(1, cols-1):
+            if not np.isnan(fmap[i, j]):
+                # Current pixel value
+                center = fmap[i, j]
+                
+                # Get 8 neighboring pixels
+                neighbors = [
+                    fmap[i-1, j-1], fmap[i-1, j], fmap[i-1, j+1],
+                    fmap[i, j-1],                  fmap[i, j+1],
+                    fmap[i+1, j-1], fmap[i+1, j], fmap[i+1, j+1]
+                ]
+                
+                # Calculate mean of valid neighbors
+                valid_neighbors = [x for x in neighbors if not np.isnan(x)]
+                if valid_neighbors:  # Only if there are valid neighbors
+                    neighbor_mean = np.mean(valid_neighbors)
+                    center_values.append(center)
+                    neighbor_means.append(neighbor_mean)
+    
+    # Calculate correlation if we have enough points
+    if len(center_values) > 1:
+        coherence = np.corrcoef(center_values, neighbor_means)[0, 1]
+        return coherence if not np.isnan(coherence) else np.nan
+    else:
+        return np.nan
+import numpy as np
+
+def calculate_spatial_coherence1(place_field_map):
+    """
+    Calculate spatial coherence of a place field map based on Muller and Kubie (1989).
+    Measures first-order spatial autocorrelation without smoothing.
+    
+    Parameters:
+    place_field_map : 2D numpy array
+        The place field map with firing rates
+    
+    Returns:
+    float : Spatial coherence value
+    """
+    # Convert to float and handle potential NaN values
+    fmap = np.array(place_field_map, dtype=float)
+    if np.all(np.isnan(fmap)):
+        return np.nan
+        
+    # Get dimensions
+    rows, cols = fmap.shape
+    
+    # Create arrays to store values for correlation
+    center_values = []
+    neighbor_means = []
+    
+    # Iterate through each pixel (excluding borders)
+    for i in range(1, rows-1):
+        for j in range(1, cols-1):
+            if not np.isnan(fmap[i, j]):
+                # Current pixel value
+                center = fmap[i, j]
+                
+                # Get 8 neighboring pixels
+                neighbors = [
+                    fmap[i-1, j-1], fmap[i-1, j], fmap[i-1, j+1],
+                    fmap[i, j-1],                  fmap[i, j+1],
+                    fmap[i+1, j-1], fmap[i+1, j], fmap[i+1, j+1]
+                ]
+                
+                # Calculate mean of valid neighbors
+                valid_neighbors = [x for x in neighbors if not np.isnan(x)]
+                if valid_neighbors:  # Only if there are valid neighbors
+                    neighbor_mean = np.mean(valid_neighbors)
+                    center_values.append(center)
+                    neighbor_means.append(neighbor_mean)
+    
+    # Calculate correlation if we have enough points
+    if len(center_values) > 1:
+        coherence = np.corrcoef(center_values, neighbor_means)[0, 1]
+        return coherence if not np.isnan(coherence) else np.nan
+    else:
+        return np.nan
+    
+def coherence(map_data, normalize='on'):
+    """
+    Calculate spatial coherence of a rate map based on Muller and Kubie (1989).
+    
+    Parameters:
+    -----------
+    map_data : ndarray
+        2D rate map, can contain NaNs which will be replaced with 0
+    normalize : str, optional
+        Whether to normalize the result using arctanh ('on' or 'off', default='on')
+    
+    Returns:
+    --------
+    float
+        Coherence value
+    
+    Notes:
+    -----
+    Uses zero-padding for border values as in the original MATLAB implementation.
+    """
+    # Input validation
+    if not isinstance(map_data, np.ndarray) or len(map_data.shape) != 2 or map_data.size == 0:
+        raise ValueError("map_data must be a non-empty 2D numpy array")
+    
+    if normalize.lower() not in ['on', 'off']:
+        raise ValueError("normalize must be 'on' or 'off'")
+    
+    # Convert to boolean for normalization check
+    do_normalization = normalize.lower() == 'on'
+    
+    # Create the averaging kernel (1/8 for 8 neighbors)
+    K = np.array([[0.125, 0.125, 0.125],
+                  [0.125, 0.000, 0.125],
+                  [0.125, 0.125, 0.125]])
+    
+    # Handle NaN values by replacing with 0
+    map_data = np.nan_to_num(map_data, nan=0.0)
+    
+    # Perform 2D convolution with 'same' padding (similar to MATLAB's conv2)
+    avg_map = signal.convolve2d(map_data, K, mode='same', boundary='fill', fillvalue=0)
+    
+    # Flatten arrays for correlation (row-major order like MATLAB's reshape with ')
+    map_linear = map_data.T.ravel()
+    avg_map_linear = avg_map.T.ravel()
+    
+    # Calculate Pearson correlation
+    z, _ = pearsonr(map_linear, avg_map_linear)
+    
+    # Apply normalization if requested
+    if do_normalization:
+        z = np.arctanh(z)
+    
+    return z
+
+
+def calculate_spatial_stability(map1, map2):
+    """
+    Calculate spatial stability between two pre-adjusted place field maps 
+    using pixel-wise correlation.
+    
+    Parameters:
+    map1 : 2D numpy array of time-adjusted firing rates from first trial
+    map2 : 2D numpy array of time-adjusted firing rates from second trial
+    
+    Returns:
+    float : correlation coefficient
+    """
+    # Ensure maps have same dimensions
+    if map1.shape != map2.shape:
+        raise ValueError("Map dimensions must match")
+    
+    # Flatten the maps to 1D arrays
+    rates1 = map1.flatten()
+    rates2 = map2.flatten()
+    
+    # Remove any nan values
+    valid_pairs = np.logical_and(~np.isnan(rates1), ~np.isnan(rates2))
+    valid_rates1 = rates1[valid_pairs]
+    valid_rates2 = rates2[valid_pairs]
+    
+    # Calculate correlation if we have enough valid data points
+    if len(valid_rates1) > 1:
+        correlation, _ = stats.pearsonr(valid_rates1, valid_rates2)
+        return correlation
+    return np.nan
+
+

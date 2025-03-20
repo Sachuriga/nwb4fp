@@ -280,7 +280,8 @@ def test_quality(path, temp_folder, save_path_test, video_search_directory, idun
     updated_data.to_csv(save_path_test, index=False)
 
 def qualitymetrix(path, temp_folder):
-    global_job_kwargs = dict(n_jobs=32, total_memory="64G",mp_context= "spawn",progress_bar=True)
+    memory_size = 128
+    global_job_kwargs = dict(n_jobs=32, total_memory=fr"{memory_size}G",mp_context= "spawn",progress_bar=True)
     si.set_global_job_kwargs(**global_job_kwargs)
 
     sorting = se.read_phy(folder_path=path, load_all_cluster_properties=True,exclude_cluster_groups = ["noise", "mua"])
@@ -336,12 +337,12 @@ def qualitymetrix(path, temp_folder):
     sorting.set_property(key='group', values = sorting.get_property("channel_group"))
     print(f"get times for raw sorts{sorting.get_times()}")
     ## step to analyzer
-    GLOBAL_KWARGS = dict(n_jobs=8, total_memory="64G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
     si.set_global_job_kwargs(**GLOBAL_KWARGS)
 
     analyzer = si.create_sorting_analyzer(sorting=sorting, recording=rec_w, format='memory', folder=fr"{temp_folder}",overwrite=True)
     ## step to computations
-    GLOBAL_KWARGS = dict(n_jobs=12, total_memory="64G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}", progress_bar=True, mp_context= "spawn", chunk_size=10000, chunk_duration="1s")
     si.set_global_job_kwargs(**GLOBAL_KWARGS)
     we1 = analyzer.compute("random_spikes","waveforms")
     we1 = analyzer.compute("waveforms")
@@ -355,13 +356,13 @@ def qualitymetrix(path, temp_folder):
     sort_merge.set_property(key='group', values = sort_merge.get_property("channel_group"))
 
     ## Step to creating analyzers
-    GLOBAL_KWARGS = dict(n_jobs=8, total_memory="64G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
     si.set_global_job_kwargs(**GLOBAL_KWARGS)
 
     analyzer1 = si.create_sorting_analyzer(sorting=sort_merge, recording=rec_w, format='memory', folder=fr"{temp_folder}_analy",overwrite=True)
 
     ## step to computations
-    GLOBAL_KWARGS = dict(n_jobs=12, total_memory="64G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}", progress_bar=True, mp_context= "spawn", chunk_size=10000, chunk_duration="1s")
     si.set_global_job_kwargs(**GLOBAL_KWARGS)
     we = analyzer1.compute("random_spikes","waveforms")
     
@@ -378,11 +379,14 @@ def qualitymetrix(path, temp_folder):
     
     sim = analyzer1.compute("template_similarity", method="cosine_similarity")
     unit_locations = analyzer1.compute(input="unit_locations", method="monopolar_triangulation")
+    GLOBAL_KWARGS = dict(n_jobs=36, total_memory=fr"{memory_size}", progress_bar=True, mp_context= "spawn", chunk_size=10000, chunk_duration="1s")
+    si.set_global_job_kwargs(**GLOBAL_KWARGS)
     qm_ext = analyzer1.compute(input={"principal_components": dict(n_components=10, mode="by_channel_local"),
                                 "quality_metrics": dict(skip_pc_metrics=False)})
     qm_data = analyzer1.get_extension("quality_metrics").get_data()
-    keep_mask = (qm_data["isi_violations_ratio"] < 0.2) & (np.float64(qm_data["amplitude_median"]) < np.float64(-40.0)) & (qm_data["l_ratio"]<0.05)
+    keep_mask = (qm_data["isi_violations_ratio"] <= 0.2) & (np.float64(qm_data["amplitude_median"]) <= np.float64(-40.0)) & (qm_data["l_ratio"] <= 0.05)
     q = sort_merge.get_property('quality')
+    
     b=q
     b[keep_mask] = 'good'
     b[keep_mask==False]='mua'
