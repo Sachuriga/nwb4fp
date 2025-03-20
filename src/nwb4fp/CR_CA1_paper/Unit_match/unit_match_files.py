@@ -26,42 +26,47 @@ import UnitMatchPy.default_params as default_params
 import UnitMatchPy.assign_unique_id as aid
 import UnitMatchPy
 
-def load_filen(animal, day, ephys_path, valid_animals):
+def load_filen(animal, day, ephys_path, valid_animals, processed_days):
+    if animal not in valid_animals:
+        return None
+    
+    # Create a unique key for this animal-day combination
+    day_key = f"{animal}_{day}"
+    
+    # If we've already processed this day for this animal, skip collection
+    if day_key in processed_days:
+        return None
+    
     raw_path = []
     phy_folder = []
+    suffixes = ['A', 'B', 'C']
     
-    if animal in valid_animals:
-        for suffix in ['A', 'B', 'C']:
-            # Raw path pattern: e.g., {ephys_path}\{animal}\{animal}_{day}*{suffix}
-            pattern = rf'{ephys_path}\{animal}\{animal}_{day}*{suffix}'
-            raw_matches = glob.glob(pattern)
-            # Filter and only append if there are valid matches
-            raw_filtered = [p for p in raw_matches if os.path.basename(p).endswith(suffix)]
-            if raw_filtered:  # Only append if the filtered list is not empty
-                raw_path.append(raw_filtered)
-            
-            # Phy folder pattern: e.g., {ephys_path}\{animal}\{animal}_{day}*A*4match
-            pattern = rf'{ephys_path}\{animal}\{animal}_{day}*{suffix}*4match'
-            phy_matches = glob.glob(pattern)
-            # Filter and only append if there are valid matches
-            phy_filtered = [p for p in phy_matches if os.path.basename(p).endswith('4match')]
-            if phy_filtered:  # Only append if the filtered list is not empty
-                phy_folder.append(phy_filtered)
+    for suffix in suffixes:
+        # Raw path pattern: e.g., {ephys_path}\{animal}\{animal}_{day}*{suffix}
+        pattern = rf'{ephys_path}\{animal}\{animal}_{day}*{suffix}'
+        raw_matches = glob.glob(pattern)
+        raw_filtered = [p for p in raw_matches 
+                       if os.path.basename(p).endswith(suffix) 
+                       and p not in sum(raw_path, [])]
+        if raw_filtered:
+            raw_path.append(raw_filtered)
         
-        # Count total number of phy folders across all suffixes
-        total_phy_folders = sum(len(sublist) for sublist in phy_folder)
-        
-        # Return raw_path and phy_folder if 2 or more phy folders exist, else None
-        if total_phy_folders >= 2:
-            return raw_path, phy_folder
-        else:
-            return None
-    return None  # Return None if animal is not in valid_animals
-
-# ephys_path = 'S:\Sachuriga\Ephys_Recording\CR_CA1'
-# raw_path=paths[0][0]
-# phy_folder=paths[1][0]
-ExtractGoodUnitsOnly = True
+        # Phy folder pattern: e.g., {ephys_path}\{animal}\{animal}_{day}*{suffix}*4match
+        pattern = rf'{ephys_path}\{animal}\{animal}_{day}*{suffix}*4match'
+        phy_matches = glob.glob(pattern)
+        phy_filtered = [p for p in phy_matches 
+                       if os.path.basename(p).endswith('4match') 
+                       and p not in sum(phy_folder, [])]
+        if phy_filtered:
+            phy_folder.append(phy_filtered)
+    
+    total_phy_folders = sum(len(sublist) for sublist in phy_folder)
+    
+    if total_phy_folders >= 2:
+        # Mark this day as processed
+        processed_days.add(day_key)
+        return raw_path, phy_folder
+    return None
 
 def zero_center_waveform(waveform):
     """
