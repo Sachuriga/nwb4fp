@@ -195,7 +195,7 @@ def plot_ratemap(x, y, t, spike_times, box_size=[1.0, 1.0], bin_size=0.05,
 
 
 def plot_ratemap_ax(x, y, t, spike_times, box_size=[1.0, 1.0], bin_size=0.05, vmin=0, 
-                 ax=None, smoothing=0.05, origin='upper', cmap='hot'):
+                 ax=None, smoothing=0.05, origin='upper', cmap='hot',plot=True):
     """
     Parameters
     ----------
@@ -215,19 +215,23 @@ def plot_ratemap_ax(x, y, t, spike_times, box_size=[1.0, 1.0], bin_size=0.05, vm
     -------
     out : axes
     """
-    if ax is None:
-        fig = plt.figure()
-        ax = fig.add_subplot(111, xlim=[0, 1], ylim=[0, 1], aspect=1)
-    
+
     maps = mapp.SpatialMap(box_size=box_size, bin_size=bin_size, smoothing=smoothing)
     rate_map = maps.rate_map(x, y, t, spike_times)
     
-    # 在指定的 ax 上绘制 imshow
-    ax.imshow(rate_map, interpolation='none', origin=origin,
-              extent=(0, 1, 0, 1), vmin=vmin, cmap=cmap)
-    ax.set_title('%.2f Hz' % np.nanmax(rate_map))
-    ax.grid(False)
-    return rate_map
+    if plot:
+        # 在指定的 ax 上绘制 imshow
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, xlim=[0, 1], ylim=[0, 1], aspect=1)
+        
+        ax.imshow(rate_map, interpolation='none', origin=origin,
+                extent=(0, 1, 0, 1), vmin=vmin, cmap=cmap)
+        ax.set_title('%.2f Hz' % np.nanmax(rate_map))
+        ax.grid(False)
+        return rate_map
+    else:
+        return rate_map
 
 
 def plot_occupancy(x, y, t, bin_size=0.05, box_size=1,

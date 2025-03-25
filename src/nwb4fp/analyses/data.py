@@ -78,7 +78,7 @@ def unit_location_ch(file_path:str=r"Q:\sachuriga\Sachuriga_Python/quattrocolo-n
     return channel_id,distance
 
 
-def pos2speed(t,x,y,filter_speed=True,min_speed=0.05):
+def pos2speed(t,x,y,filter_speed=True,min_speed=0.02):
     delta_X = np.diff(x)
     delta_Y = np.diff(y)
     sampling_intervals = np.diff(t)
@@ -101,9 +101,7 @@ def pos2speed(t,x,y,filter_speed=True,min_speed=0.05):
         mask = (speeds>=min_speed)
         filtered_smoothed_speed = smoothed_speed[mask]
         filtered_speeds = speeds[mask]
-        valid_mask = (speeds>=0.05)
-
-
+        valid_mask = (speeds>=min_speed)
     xx=x
     yy=y
     tt=t
@@ -113,7 +111,7 @@ def pos2speed(t,x,y,filter_speed=True,min_speed=0.05):
 
     combined_array = np.column_stack((t[valid_mask], x[valid_mask], y[valid_mask]))
     raw_pos = np.column_stack((t1, x1, y1))
-    return raw_pos,combined_array, mask, speeds[valid_mask],smoothed_speed[valid_mask], filtered_speeds
+    return raw_pos,combined_array, mask, speeds[valid_mask],smoothed_speed, filtered_smoothed_speed
 
 def speed_filtered_spikes(spikes_time, t, mask : list = []):
     # Calculate the extended time bins based on median differences

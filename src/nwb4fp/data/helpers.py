@@ -68,16 +68,23 @@ def df2results_sns(df):
     data = pd.DataFrame({'x': x_sampled, 'y': y_sampled})
     return data
 
-def unit_location_ch(file_path:str=r"Q:\sachuriga\Sachuriga_Python/quattrocolo-nwb4fp/ASSY-236-F.prb", x_input: float = 0.0, y_input: float = 0.0):
+def unit_location_ch(file_path:str=r"Q:\sachuriga\Sachuriga_Python/quattrocolo-nwb4fp/ASSY-236-F.prb", x: float = 0.0, y: float = 0.0):
+
+    import pandas as pd
+    x_input=x
+    y_input=y
 
     # Read the file and parse the dictionary
+    local_vars = {'np': np}
     with open(file_path, 'r') as file:
-        # If the file starts with "channel_groups =", strip it
-        content = file.read().replace("channel_groups =", "").strip()
-        channel_groups = ast.literal_eval(content)
+        exec(file.read(), local_vars)  # Execute the file content with NumPy in scope
 
-    # Now channel_groups contains the dictionary
-    print("Loaded channel_groups:", channel_groups)
+        
+    channel_groups = local_vars.get('channel_groups')
+    if channel_groups is None:
+        raise ValueError(f"'channel_groups' not found in {file_path}")
+    
+
 
     # Assuming channel_groups is loaded from Step 1
     data = []
@@ -95,28 +102,15 @@ def unit_location_ch(file_path:str=r"Q:\sachuriga\Sachuriga_Python/quattrocolo-n
 
     # Create a DataFrame
     df = pd.DataFrame(data)
-
     # Sort by group_id and channel_id for clarity (optional)
     dataframe = df.sort_values(by=['group_id', 'channel_id']).reset_index(drop=True)
 
     # Function to find the nearest channel_id given x and y coordinates
-
         # Calculate Euclidean distance from input (x, y) to all points in the DataFrame
     distances = np.sqrt((dataframe['x'] - x_input)**2 + (dataframe['y'] - y_input)**2)
-    # Find the index of the minimum distance
     nearest_idx = distances.idxmin()
-    
+
     # Return the channel_id at that index
-    # Example usage with your input
-    # x_input = npdata['units']['x'][unit_num]
-    # y_input = npdata['units']['y'][unit_num]
     channel_id=dataframe.loc[nearest_idx, 'channel_id']
-    distance=distances[nearest_idx]
-    print(f"Nearest Channel ID for (x={x_input}, y={y_input}) is: {channel_id}")
-    print(f"Distance to nearest point: {distance}")
 
-    # Optionally print the full DataFrame for reference
-    print("\nFull DataFrame:")
-    print(dataframe)
-
-    return channel_id,distance
+    return channel_id

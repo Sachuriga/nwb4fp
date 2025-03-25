@@ -139,8 +139,11 @@ def run_unitmatch(raw_path,phy_folder,ephys_path,ExtractGoodUnitsOnly:bool=True)
             keep = np.argwhere((IsGoodTmp == 'good')).squeeze()
             idss = sorting.get_unit_ids()
             id = idss[keep]
-            Sortings[i] = sorting.select_units(id)
-            
+            print(fr"id is {id}")
+            if np.isscalar(id):
+                Sortings[i] = sorting.select_units([id])
+            else:
+                Sortings[i] = sorting.select_units(id)
             ids[i]=id.tolist()
             #ids[i] = Sortings[0].get_property('original_cluster_id')
         else:
@@ -277,6 +280,8 @@ def run_unitmatch(raw_path,phy_folder,ephys_path,ExtractGoodUnitsOnly:bool=True)
     waveform = zero_center_waveform(waveform)
 
     # create clusInfo, contains all unit id/session related info
+    #param = {'SpikeWidth': 90, 'waveidx': np.arange(15,60), 'PeakLoc': 29,'peak_loc':29,'units_per_shank_thrs': 20}
+    print(param)
     clus_info = {'good_units' : GoodUnits, 'session_switch' : session_switch, 'session_id' : session_id, 
                 'original_ids' : np.concatenate(GoodUnits) }
     extracted_wave_properties = Overlord.extract_parameters(waveform, channel_pos, clus_info, param)
