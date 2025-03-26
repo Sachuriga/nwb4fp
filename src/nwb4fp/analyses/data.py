@@ -355,3 +355,114 @@ def calculate_spatial_stability(map1, map2):
     return np.nan
 
 
+def population_vector_correlation(stack1, stack2, full='off', orientation='v'):
+    import numpy as np
+    """
+    Calculates correlation between population vectors.
+    
+    Parameters:
+    -----------
+    stack1 : ndarray
+        3D matrix representing first population vector (y_bins, x_bins, num_cells)
+    stack2 : ndarray
+        3D matrix representing second population vector (y_bins, x_bins, num_cells)
+    full : str, optional
+        'off': returns diagonal elements (2D matrix)
+        'on': returns full correlation matrices (3D matrix)
+        'vector': returns vector correlation (1D array)
+        Default is 'off'
+    orientation : str, optional
+        'v': vertical (row-wise) processing
+        'h': horizontal (column-wise) processing
+        Only used when full='vector'. Default is 'v'
+    
+    Returns:
+    --------
+    pv_corr : ndarray
+        Correlation values (1D, 2D, or 3D array depending on 'full' parameter)
+    """
+    
+    # Define return format constants
+    RETURN_2D = 0
+    RETURN_3D = 1
+    RETURN_1D = 2
+    
+    # Set default return format and orientation
+    return_format = RETURN_2D
+    is_orientation_x = False
+    
+    # Process input parameters
+    full = full.lower()
+    if full == 'on':
+        return_format = RETURN_3D
+    elif full == 'vector':
+        return_format = RETURN_1D
+    
+    orientation = orientation.lower()
+    if orientation == 'h':
+        is_orientation_x = True
+    
+    if return_format == RETURN_1D and orientation not in ['v', 'h']:
+        raise ValueError("Orientation must be 'v' or 'h' when full='vector'")
+    
+    # Get dimensions
+    y_bins1, x_bins1, num_cells1 = stack1.shape
+    y_bins2, x_bins2, num_cells2 = stack2.shape
+    
+    num_cells = min(num_cells1, num_cells2)
+    num_x_bins = min(x_bins1, x_bins2)
+    num_y_bins = min(y_bins1, y_bins2)
+    
+    if num_cells1 != num_cells2:
+        print(f"Warning: Population vectors have different sizes: {num_cells1} vs {num_cells2}")
+    
+    # Initialize output array
+    if return_format == RETURN_1D:
+        pv_corr = np.zeros(num_x_bins if is_orientation_x else num_y_bins)
+    elif return_format == RETURN_2D:
+        pv_corr = np.zeros((num_y_bins, num_x_bins))
+    else:  # RETURN_3D
+        pv_corr = np.zeros((x_bins1, x_bins2, num_y_bins))
+    
+    num_bins = num_x_bins if is_orientation_x else num_y_bins
+    
+    # Main correlation calculation
+    for i in range(num_bins):
+        if is_orientation_x:
+            stack1d_left = stack1[:, i, :num_cells]  # column
+            stack1d_right = stack2[:, i, :num_cells]
+        else:
+            stack1d_left = stack1[i, :, :num_cells]  # row
+            stack1d_right = stack2[i, :, :num_cells]
+        
+        if return_format == RETURN_1D:
+            if is_orientation_x:
+                reshaped_left = stack1d_left.reshape(-1)
+                reshaped_right = stack1d_right.reshape(-1)
+            else:
+                reshaped_left = stack1d_left.reshape(-1)
+                reshaped_right = stack1d_right.reshape(-1)
+        else:
+            # Reshape to (num_cells, num_bins) for correlation
+            reshaped_left = stack1d_left.T
+            reshaped_right = stack1d_right.T
+        
+        # Calculate correlation
+        if return_format == RETURN_3D:
+            corr_matrix = np.corrcoef(reshaped_left, reshaped_right)
+            # Extract only the relevant part (first half vs second half)
+            pv_corr[:, :, i] = corr_matrix[:reshaped_left.shape[1], 
+                                         reshaped_left.shape[1]:]
+            
+        elif return_format == RETURN_2D:
+            corr_matrix = np.corrcoef(reshaped_left, reshaped_right)
+            diag_vals = np.diag(corr_matrix[:reshaped_left.shape[1], 
+                                          reshaped_left.shape[1]:])
+            pv_corr[i, :len(diag_vals)] = diag_vals
+            pv_corr[i, np.isnan(pv_corr[i])] = 0
+            
+        else:  # RETURN_1D
+            corr_val = np.corrcoef(reshaped_left, reshaped_right)[0, 1]
+            pv_corr[i] = corr_val if not np.isnan(corr_val) else 0
+    
+    return pv_corr
