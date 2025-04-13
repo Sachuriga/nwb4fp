@@ -26,14 +26,13 @@ def _adjust_bin_size(box_size, bin_size=None, bin_count=None):
             box_size[1] / int(box_size[1] / bin_size[1]),
         ]
     )
-    print(box_size)
+
     return box_size, bin_size
 
 
 def _make_bins(box_size, bin_size):
     xbins = np.arange(0, box_size[0] + bin_size[0], bin_size[0])
     ybins = np.arange(0, box_size[1] + bin_size[1], bin_size[1])
-    print("bins zie" + str(xbins) )
     return xbins, ybins
 
 

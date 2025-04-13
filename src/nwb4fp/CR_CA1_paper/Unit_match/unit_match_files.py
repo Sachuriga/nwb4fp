@@ -10,7 +10,7 @@ import probeinterface as pi
 import spikeinterface.exporters as sex
 from spikeinterface.preprocessing import (bandpass_filter,
                                            common_reference,
-                                           whiten)
+                                           whiten, interpolate_bad_channels,zscore)
 from spikeinterface.extractors.neoextractors.openephys import OpenEphysBinaryRecordingExtractor
 import os
 import glob
@@ -159,12 +159,16 @@ def run_unitmatch(raw_path,phy_folder,ephys_path,ExtractGoodUnitsOnly:bool=True)
     # # Preprocces the raw data
     for recording in Recordings:
         #recording = spre.phase_shift(recording, inter_sample_shift=None) #correct for time delay between recording channels
-        # bad_channel_ids, channel_labels = spre.detect_bad_channels(recording, method="coherence+psd")
+        bad_channel_ids, channel_labels = spre.detect_bad_channels(recording, method="coherence+psd")
         # # remove bad channels
         # recording = recording.remove_channels(bad_channel_ids)
-        recording  = spre.bandpass_filter(recording, freq_min=600, freq_max=8000) #highpass
-        recording = spre.common_reference(recording=recording, operator="median", reference="global")
-        recording = whiten(recording, int_scale=200, mode='local', radius_um=100.0)
+        recording  = interpolate_bad_channels(recording , bad_channel_ids)
+        recording = spre.notch_filter(recording, freq=50)  # 去除电源噪声（如 50 Hz）
+        recording  = spre.bandpass_filter(recording, freq_min=600, freq_max=6000) #highpass
+        recording  = zscore(recording)
+        #recording  = spre.bandpass_filter(recording, freq_min=600, freq_max=6000) #highpass
+        recording = spre.common_reference(recording=recording, operator="average", reference="local", local_radius = (0, 175))
+        recording = whiten(recording, int_scale=200, mode='local', radius_um=175.0)
         # for motion correction, this can be very slow
         #Uncommented code below to do in session motion correction
         #recording = spre.correct_motion(recording, preset="nonrigid_fast_and_accurate")

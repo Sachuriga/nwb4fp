@@ -30,7 +30,6 @@ def find_peaks(image):
     peaks = peaks[distances.argsort()]
     return peaks
 
-
 def sort_fields_by_rate(rate_map, fields, func=None):
     '''Sort fields by the rate value of each field
     Parameters
@@ -51,46 +50,12 @@ def sort_fields_by_rate(rate_map, fields, func=None):
     rate_means = ndimage.labeled_comprehension(
         rate_map, fields, indx, func, np.float64, 0)
     sort = np.argsort(rate_means)[::-1]
-    print(fields)
     # new rate map with fields > min_size, sorted
     sorted_fields = np.zeros_like(fields)
     for i in range(indx.max() + 1):
         sorted_fields[fields == sort[i] + 1] = i + 1
 
     return sorted_fields
-
-
-## old function
-# def remove_fields_by_area(fields, minimum_field_area):
-#     '''Sets fields below minimum area to zero, measured as the number of bins in a field.
-#     Parameters
-#     ----------
-#     fields : array
-#         The fields
-#     minimum_field_area : int
-#         Minimum field area (number of bins in a field)
-#     Returns
-#     -------
-#     fields
-#         Fields with number of bins below minimum_field_area are set to zero
-#     '''
-#     if not isinstance(minimum_field_area, (int, np.integer)):
-#         raise ValueError("'minimum_field_area' should be int")
-
-#     ## variant
-#     # fields_areas = scipy.ndimage.measurements.sum(
-#     #     np.ones_like(fields), fields, index=np.arange(fields.max() + 1))
-#     # fields_area = fields_areas[fields]
-#     # fields[fields_area < minimum_field_area] = 0
-
-#     labels, counts = np.unique(fields, return_counts=True)
-#     for (lab, count) in zip(labels, counts):
-#         if lab != 0:
-#             if count < minimum_field_area:
-#                 fields[fields == lab] = 0
-#     return fields
-
-
 
 def remove_fields_by_area(fields, minimum_field_area):
     '''Sets fields below minimum area to zero and reorders remaining labels from 1 based on size.

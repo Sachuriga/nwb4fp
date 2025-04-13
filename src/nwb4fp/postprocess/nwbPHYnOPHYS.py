@@ -481,8 +481,6 @@ def OE_DLC2nwb(path,
     metadata["institution"] = 'Kavili institute for system neuroscience'
     metadata["session_description"] = f"{UD[3]}_room open-field CA1 recording"
     
-    
-
 
     print(metadata)
     # For data provenance we add the time zone information to the conversionSS

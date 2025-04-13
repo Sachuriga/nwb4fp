@@ -1,6 +1,6 @@
 import numpy as np
-
-
+import nwb4fp.analyses.maps as mapp 
+import random
 def _inf_rate(rate_map, px):
     '''
     A helper function for information rate.
@@ -13,6 +13,94 @@ def _inf_rate(rate_map, px):
     return (np.nansum(np.ravel(tmp_rate_map * np.log2(tmp_rate_map/avg_rate) *
             px)), avg_rate)
 
+import numpy as np
+
+def map_stats_pdf(rate_map, px):
+    """
+    Calculate statistics of a rate map that depend on probability distribution function (PDF).
+    
+    Calculates information, sparsity and selectivity of a rate map according to
+    Skaggs et al. (1993, 1996) papers.
+    
+    Parameters:
+    -----------
+    map_data : dict
+        Dictionary with rate map containing 'time' and 'z' fields
+    
+    Returns:
+    --------
+    information : dict
+        Dictionary with 'rate' (bits/sec) and 'content' (bits/spike)
+    sparsity : float
+        Sparsity value
+    selectivity : float
+        Selectivity value
+    """
+    
+
+    # Probability of animal being in bin x
+    pos_pdf = px
+    
+    # Calculate mean rate and mean square rate
+    mean_rate = np.nansum(rate_map * pos_pdf)
+    mean_square_rate = np.nansum((rate_map ** 2) * pos_pdf)
+    
+    # Calculate sparsity
+    if mean_square_rate == 0:
+        sparsity = np.nan
+    else:
+        sparsity = mean_rate**2 / mean_square_rate
+    
+    # Calculate selectivity and information
+    max_rate = np.nanmax(rate_map)
+    
+    if mean_rate == 0:
+        selectivity = np.nan
+        information = {'rate': np.nan, 'content': np.nan}
+    else:
+        selectivity = max_rate / mean_rate
+        
+        log_arg = rate_map / mean_rate
+        log_arg[log_arg < 1] = 1
+        
+        info_rate = np.nansum(pos_pdf * rate_map * np.log2(log_arg))
+        information = {
+            'rate': info_rate,
+            'content': info_rate / mean_rate
+        }
+    
+    return information, sparsity, selectivity , mean_rate
+
+
+def shuffule_spi(x,y,times, spikes_times, n_itters):
+    
+    maps = mapp.SpatialMap(box_size=[1.0, 1.0], bin_size=0.05, smoothing=0.05)
+    max_shift =  np.median(times)
+    occupancy_map = maps.occupancy_map(x, y, times)
+    px = occupancy_map/np.sum(occupancy_map)
+    result_info_rate = []
+    result_content_rate = []
+    result_sparsity_rate = []
+    result_selectivity_rate = []
+    for i in range(n_itters):
+        value = random.uniform(0, max_shift)
+        new_spikes_times = []
+
+        for t in spikes_times:
+            if (t + value) < spikes_times[-1]:
+                new_spikes_times.append(t + value)
+            else:
+                new_spikes_times.append((spikes_times[-1]  - (t + value)))
+        
+        rate_map = maps.rate_map(x, y, times, new_spikes_times)
+        information, sparsity, selectivity , mean_rate = map_stats_pdf(rate_map,px)
+
+        result_info_rate.append(information['rate'])
+        result_content_rate.append(information['content'])
+        result_sparsity_rate.append(sparsity)
+        result_selectivity_rate.append(selectivity)
+
+    return result_info_rate, result_content_rate, result_sparsity_rate, result_selectivity_rate
 
 def sparsity(rate_map, px):
     '''
@@ -112,7 +200,7 @@ def information_rate(rate_map, px):
        Deciphering the Hippocampal Code. In Advances in Neural Information
        Processing Systems 5. pp. 1030-1037.
     '''
-    return _inf_rate(rate_map, px)[0]
+    return _inf_rate(rate_map, px)
 
 
 def information_specificity(rate_map, px):

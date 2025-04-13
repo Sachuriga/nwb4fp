@@ -1,5 +1,6 @@
 from pycircstat.descriptive import mean, resultant_vector_length
 import numpy as np
+import numpy as np
 from scipy.stats import norm
 
 
@@ -26,17 +27,17 @@ def corr_cc(alpha, beta):
 	'''
 
 	n = len(alpha)
-	alpha_bar = mean(alpha)
-	beta_bar = mean(beta)
+	alpha_bar = np.mean(alpha)
+	beta_bar = np.mean(beta)
 
 	num = sum(np.sin(alpha - alpha_bar) * np.sin(beta - beta_bar))
 	den = np.sqrt(sum(np.sin(alpha - alpha_bar)**2) * sum(np.sin(beta - beta_bar)**2))
 
 	rho = num / den	# correlation coefficient
 
-	l20 = mean(np.sin(alpha - alpha_bar)**2)
-	l02 = mean(np.sin(beta - beta_bar)**2)
-	l22 = mean((np.sin(alpha - alpha_bar)**2) * (np.sin(beta - beta_bar)**2))
+	l20 = np.mean(np.sin(alpha - alpha_bar)**2)
+	l02 = np.mean(np.sin(beta - beta_bar)**2)
+	l22 = np.mean((np.sin(alpha - alpha_bar)**2) * (np.sin(beta - beta_bar)**2))
 
 	ts = np.sqrt((n * l20 * l02) / l22) * rho
 	pval = 2 * (1 - norm.cdf(abs(ts)))
@@ -66,14 +67,14 @@ def corr_cc_uniform(a, b):
 	'''
 
 	n = len(a)
-	a_bar = mean(a)
-	b_bar = mean(b)
+	a_bar = np.mean(a)
+	b_bar = np.mean(b)
 
 	aplusb = a + b
 	aminusb = a - b
 
-	aplusb_bar =  mean(aplusb)
-	aminusb_bar = mean(aminusb)
+	aplusb_bar =  np.mean(aplusb)
+	aminusb_bar = np.mean(aminusb)
 
 	R_aplusb =  resultant_vector_length(aplusb)
 	R_aminusb = resultant_vector_length(aminusb)
@@ -85,9 +86,9 @@ def corr_cc_uniform(a, b):
 
 	#RK not sure wheter the next equations on the significance are still valid
 
-	l20 = mean(np.sin(a - a_bar)**2)
-	l02 = mean(np.sin(b - b_bar)**2)
-	l22 = mean((np.sin(a - a_bar)**2) * (np.sin(b - b_bar)**2))
+	l20 = np.mean(np.sin(a - a_bar)**2)
+	l02 = np.mean(np.sin(b - b_bar)**2)
+	l22 = np.mean((np.sin(a - a_bar)**2) * (np.sin(b - b_bar)**2))
 
 	ts = np.sqrt((n * l20 * l02) / l22) * rho
 	p = 2 * (1 - norm.cdf(abs(ts)))
