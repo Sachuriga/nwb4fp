@@ -7,6 +7,168 @@ import pandas as pd
 import numpy as np
 from scipy import signal
 from scipy.stats import pearsonr
+import os
+
+# 分组函数
+def group_channels_by_group(channel_list):
+    file_path = r"Q:\sachuriga\Sachuriga_Python/quattrocolo-nwb4fp/ASSY-236-F.prb"
+    # Read the file and parse the dictionary
+    local_vars = {'np': np}
+    with open(file_path, 'r') as file:
+        exec(file.read(), local_vars)  # Execute the file content with NumPy in scope
+
+        
+    channel_groups = local_vars.get('channel_groups')
+    if channel_groups is None:
+        raise ValueError(f"'channel_groups' not found in {file_path}")
+
+    # Assuming channel_groups is loaded from Step 1
+    data = []
+    for group_id, group_data in channel_groups.items():
+        channels = group_data['channels']
+        geometry = group_data['geometry']
+        for channel in channels:
+            x, y = geometry[channel]
+            data.append({
+                'group_id': group_id,
+                'channel_id': channel,
+                'x': x,
+                'y': y
+            })
+    probe_df = pd.DataFrame(data)
+    df= probe_df
+
+    grouped = {}
+    for channel in channel_list:
+        group = df[df['channel_id'] == channel]['group_id'].values[0]
+        if group not in grouped:
+            grouped[group] = []
+        grouped[group].append(channel)
+    return grouped
+
+# 找到每个组的中间 channel_id
+def find_middle_channel_per_group(grouped_channels):
+    file_path = r"Q:\sachuriga\Sachuriga_Python/quattrocolo-nwb4fp/ASSY-236-F.prb"
+    # Read the file and parse the dictionary
+    local_vars = {'np': np}
+    with open(file_path, 'r') as file:
+        exec(file.read(), local_vars)  # Execute the file content with NumPy in scope
+
+        
+    channel_groups = local_vars.get('channel_groups')
+    if channel_groups is None:
+        raise ValueError(f"'channel_groups' not found in {file_path}")
+
+    # Assuming channel_groups is loaded from Step 1
+    data = []
+    for group_id, group_data in channel_groups.items():
+        channels = group_data['channels']
+        geometry = group_data['geometry']
+        for channel in channels:
+            x, y = geometry[channel]
+            data.append({
+                'group_id': group_id,
+                'channel_id': channel,
+                'x': x,
+                'y': y
+            })
+    probe_df = pd.DataFrame(data)
+    df= probe_df  
+
+    middle_channels = {}
+    for group, channels in grouped_channels.items():
+        group_df = df[df['channel_id'].isin(channels)]
+        sorted_df = group_df.sort_values('y', ascending=False).reset_index(drop=True)
+        middle_idx = len(sorted_df) // 2
+        middle_channel = sorted_df.iloc[middle_idx]['channel_id']
+        middle_channels[group] = middle_channel
+    return middle_channels
+
+def get_nearest_8_by_position(numbers, target, bad_channels):
+    # Filter out values in bad_channels
+    filtered_numbers = [num for num in numbers if num not in bad_channels]
+    
+    # Handle empty cases
+    if not filtered_numbers:
+        return []
+    
+    # If target not found, return up to 8 values, padded if needed
+    if target not in filtered_numbers:
+        result = filtered_numbers[:8]
+        if len(result) < 8 and result:
+            result.extend([filtered_numbers[-1]] * (8 - len(result)))
+        return result
+    
+    # Initialize result with target
+    result = [target]
+    target_idx = filtered_numbers.index(target)
+    left = target_idx - 1
+    right = target_idx + 1
+    direction = 'left'  # Start with left
+    
+    # Sweep left and right alternately
+    while len(result) < 8 and (left >= 0 or right < len(filtered_numbers)):
+        if direction == 'left' and left >= 0:
+            result.append(filtered_numbers[left])
+            left -= 1
+            direction = 'right'
+        elif direction == 'right' and right < len(filtered_numbers):
+            result.append(filtered_numbers[right])
+            right += 1
+            direction = 'left'
+        elif left >= 0:  # Right exhausted
+            result.append(filtered_numbers[left])
+            left -= 1
+        elif right < len(filtered_numbers):  # Left exhausted
+            result.append(filtered_numbers[right])
+            right += 1
+    
+    # Pad with last element if needed
+    if len(result) < 8 and filtered_numbers:
+        result.extend([filtered_numbers[-1]] * (8 - len(result)))
+    
+    return result
+
+# 映射中间 channel 到输入列表
+def map_middle_channels_to_input(channel_list, middle_channels):
+    file_path = r"Q:\sachuriga\Sachuriga_Python/quattrocolo-nwb4fp/ASSY-236-F.prb"
+    # Read the file and parse the dictionary
+    local_vars = {'np': np}
+    with open(file_path, 'r') as file:
+        exec(file.read(), local_vars)  # Execute the file content with NumPy in scope
+
+        
+    channel_groups = local_vars.get('channel_groups')
+    if channel_groups is None:
+        raise ValueError(f"'channel_groups' not found in {file_path}")
+
+    # Assuming channel_groups is loaded from Step 1
+    data = []
+    for group_id, group_data in channel_groups.items():
+        channels = group_data['channels']
+        geometry = group_data['geometry']
+        for channel in channels:
+            x, y = geometry[channel]
+            data.append({
+                'group_id': group_id,
+                'channel_id': channel,
+                'x': x,
+                'y': y
+            })
+    probe_df = pd.DataFrame(data)
+    df= probe_df
+
+    output_list = []
+    for channel in channel_list:
+        group = df[df['channel_id'] == channel]['group_id'].values[0]
+        output_list.append(middle_channels[group])
+    return output_list
+
+
+def get_pkl_files(folder_path):
+    all_files = os.listdir(folder_path)
+    pkl_files = [f for f in all_files if f.endswith("withDLC.pkl")]
+    return pkl_files
 
 def find_run_indices(speed_vector, threshold=0.05):
     starts = []
@@ -78,7 +240,7 @@ def unit_location_ch(file_path:str=r"Q:\sachuriga\Sachuriga_Python/quattrocolo-n
     return channel_id,distance
 
 
-def pos2speed(t,x,y,filter_speed=True,min_speed=0.02):
+def pos2speed(t,x,y,filter_speed=True,min_speed=0.05):
     delta_X = np.diff(x)
     delta_Y = np.diff(y)
     sampling_intervals = np.diff(t)
@@ -128,6 +290,35 @@ def speed_filtered_spikes(spikes_time, t, mask : list = []):
         spk = spikes_in_bin
 
     return spk
+
+def Speed_filtered_spikes(spikes_time, t, mask=None):
+    """
+    Filter original spike times based on a mask (e.g., speed condition).
+    Parameters:
+    - spikes_time: array of spike timestamps
+    - t: array of time points corresponding to the mask
+    - mask: boolean array or list of indices where the condition (e.g., running) is true
+    
+    Returns:
+    - filtered_spikes: array of original spike times that fall within masked regions
+    """
+    if mask is None or len(mask) == 0:
+        # If no mask is provided, return all spike times
+        return spikes_time
+    
+    # Ensure mask is a boolean array of the same length as t
+    if len(mask) != len(t):
+        raise ValueError("Mask length must match time array length")
+
+    # Find the time bins each spike falls into
+    spike_indices = np.searchsorted(t, spikes_time, side='right') - 1
+    
+    # Filter spikes where the mask is True
+    valid_spikes = (spike_indices >= 0) & (spike_indices < len(mask))
+    filtered_spikes = spikes_time[valid_spikes & mask[spike_indices]]
+    
+    return filtered_spikes
+
 
 def load_speed_fromNWB(data):
     scaler = MinMaxScaler()
@@ -466,3 +657,31 @@ def population_vector_correlation(stack1, stack2, full='off', orientation='v'):
             pv_corr[i] = corr_val if not np.isnan(corr_val) else 0
     
     return pv_corr
+
+
+# 1. 带通滤波 (6-11 Hz)
+def butter_bandpass(lowcut, highcut, fs, order=4):
+    fs = 1250
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = signal.butter(order, [low, high], btype='band')
+    return b, a
+
+def bandpass_filter(data, lowcut, highcut, fs, order=4):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = signal.filtfilt(b, a, data)  # 前后向滤波，避免相位移
+    return y
+
+def smooth2ripple(data2smooth, fs=1250):
+	channels = range(np.shape(data2smooth)[1])
+    
+	for channel in channels:
+		# Since data is in float16 type, we make it smaller to avoid overflows
+		# and then we restore it.
+		# Mean and std use float64 to have enough space
+		# Then we convert the data back to float16
+		lfp_filtered = bandpass_filter(data2smooth[:, channel], 160, 225, fs)
+		data2smooth[:, channel] = lfp_filtered.astype('float16')
+	
+	return data2smooth

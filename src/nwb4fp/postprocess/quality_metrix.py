@@ -379,6 +379,8 @@ def qualitymetrix(path, temp_folder):
     
     sim = analyzer1.compute("template_similarity", method="cosine_similarity")
     unit_locations = analyzer1.compute(input="unit_locations", method="monopolar_triangulation")
+
+    
     GLOBAL_KWARGS = dict(n_jobs=36, total_memory=fr"{memory_size}", progress_bar=True, mp_context= "spawn", chunk_size=10000, chunk_duration="1s")
     si.set_global_job_kwargs(**GLOBAL_KWARGS)
     qm_ext = analyzer1.compute(input={"principal_components": dict(n_components=10, mode="by_channel_local"),
@@ -428,5 +430,99 @@ def qualitymetrix(path, temp_folder):
     print("channel_group")
     print(unit_groups)
     print("completet!!!!_export_to_phy_part")
+
+
+def re_calculate_unit_locations(path, temp_folder):
+    memory_size = 128
+    global_job_kwargs = dict(n_jobs=32, total_memory=fr"{memory_size}G",mp_context= "spawn",progress_bar=True)
+    si.set_global_job_kwargs(**global_job_kwargs)
+
+    sorting = se.read_phy(folder_path=path, load_all_cluster_properties=True,exclude_cluster_groups = ["noise", "mua"])
+    
+    temp_path = path.split("_phy")
+    raw_path = temp_path[0]
+    #stream_name = 'Record Node 101#OE_FPGA_Acquisition_Board-100.Rhythm Data'
+    stream_name  = OpenEphysBinaryRecordingExtractor(raw_path,stream_id='0').get_streams(raw_path)[0][0]
+    print(fr"Before mannual search the stream_name. Auto search result is {stream_name}")
+    try:
+        recording = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
+    except AssertionError:
+        try:
+            stream_name = 'Record Node 102#OE_FPGA_Acquisition_Board-101.Rhythm Data'
+            recording = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
+        except AssertionError:
+            stream_name = 'Record Node 101#Acquisition_Board-100.Rhythm Data'
+            recording = se.read_openephys(raw_path, stream_name=stream_name, load_sync_timestamps=True)
+
+    import probeinterface as pi
+
+    # from probeinterface import plotting
+    manufacturer = 'cambridgeneurotech'
+    probe_name = 'ASSY-236-F'
+    probe = pi.get_probe(manufacturer, probe_name)
+    print(probe)
+    # probe.wiring_to_device('cambridgeneurotech_mini-amp-64')
+    # map channels to device indices
+    mapping_to_device = [
+        # connector J2 TOP
+        41, 39, 38, 37, 35, 34, 33, 32, 29, 30, 28, 26, 25, 24, 22, 20,
+        46, 45, 44, 43, 42, 40, 36, 31, 27, 23, 21, 18, 19, 17, 16, 14,
+        # connector J1 BOTTOM
+        55, 53, 54, 52, 51, 50, 49, 48, 47, 15, 13, 12, 11, 9, 10, 8,
+        63, 62, 61, 60, 59, 58, 57, 56, 7, 6, 5, 4, 3, 2, 1, 0
+    ]
+
+    probe.set_device_channel_indices(mapping_to_device)
+    probe.to_dataframe(complete=True).loc[:, ["contact_ids", "shank_ids", "device_channel_indices"]]
+    probegroup = pi.ProbeGroup()
+    probegroup.add_probe(probe)
+
+    pi.write_prb(f"{probe_name}.prb", probegroup, group_mode="by_shank")
+    recording_prb = recording.set_probe(probe, group_mode="by_shank")
+    rec = bandpass_filter(recording_prb, freq_min=600, freq_max=8000)
+    bad_channel_ids, channel_labels = spre.detect_bad_channels(recording_prb, method='coherence+psd',n_neighbors = 11)
+    print(fr"removed {bad_channel_ids}")
+    recording_good_ch= rec.remove_channels(bad_channel_ids)
+    #recording_good_channels_f = spre.interpolate_bad_channels(rec,bad_channel_ids)
+
+    rec_save = common_reference(recording_good_ch, reference='global', operator='median')
+    rec_w = whiten(rec_save, int_scale=200, mode='local', radius_um=100.0)
+    sorting.set_property(key='group', values = sorting.get_property("channel_group"))
+    print(f"get times for raw sorts{sorting.get_times()}")
+    ## step to analyzer
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    si.set_global_job_kwargs(**GLOBAL_KWARGS)
+
+    analyzer = si.create_sorting_analyzer(sorting=sorting, recording=rec_w, format='memory', folder=fr"{temp_folder}",overwrite=True)
+    ## step to computations
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}", progress_bar=True, mp_context= "spawn", chunk_size=10000, chunk_duration="1s")
+    si.set_global_job_kwargs(**GLOBAL_KWARGS)
+    we1 = analyzer.compute("random_spikes","waveforms")
+    we1 = analyzer.compute("waveforms")
+    we1 = analyzer.compute("noise_levels")
+    #get potential merging sorting objects
+    print("processing potential merge...\n")
+    
+    sort_merge = get_potential_merge(sorting, analyzer)
+    sort_merge = si.curation.remove_excess_spikes(sort_merge,rec_w)
+    sort_merge.set_property(key='group', values = sort_merge.get_property("channel_group"))
+
+    ## Step to creating analyzers
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}G", progress_bar=True, mp_context= "spawn", chunk_size=5000, chunk_duration="1s")
+    si.set_global_job_kwargs(**GLOBAL_KWARGS)
+
+    analyzer1 = si.create_sorting_analyzer(sorting=sort_merge, recording=rec_w, format='memory', folder=fr"{temp_folder}_analy",overwrite=True)
+
+    GLOBAL_KWARGS = dict(n_jobs=16, total_memory=fr"{memory_size}", progress_bar=True, mp_context= "spawn", chunk_size=10000, chunk_duration="1s")
+    si.set_global_job_kwargs(**GLOBAL_KWARGS)
+    we = analyzer1.compute("random_spikes","waveforms")
+    
+    we = analyzer1.compute("waveforms")
+    we = analyzer1.compute("noise_levels")
+    we = analyzer1.compute("template_metrics")
+    sim = analyzer1.compute("template_similarity", method="cosine_similarity")
+    unit_locations = analyzer1.compute(input="unit_locations", method="monopolar_triangulation")
+    unit_ids=sort_merge.unit_ids
+
 if __name__ == "__main__":
     main()
