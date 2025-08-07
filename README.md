@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/799944513.svg)](https://doi.org/10.5281/zenodo.16760325)
+
 # Neuroscience Data to NWB Conversion Script
 
 This repository contains a Python package `nwb4fp`, designed to convert neuroscience data into the Neurodata Without Borders (NWB) format. It is specifically tailored for processing electrophysiology data from the open ephys system and behavioral tracking data analyzed with DeepLabCut.
@@ -148,3 +150,4 @@ Contributions are welcome! Please fork the repository and submit a pull request 
 
 # License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
