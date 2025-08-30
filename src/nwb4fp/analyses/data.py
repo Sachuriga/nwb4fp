@@ -234,11 +234,7 @@ def unit_location_ch(file_path:str=r"Q:\sachuriga\Sachuriga_Python/quattrocolo-n
 
 
 def pos2speed(t,x,y,filter_speed=True,min_speed=0.05):
-<<<<<<< HEAD
-    delta_X = np.diff(x) 
-=======
     delta_X = np.diff(x)
->>>>>>> 816e0c07fb882e40df907d8fc611ee2746b5bee4
     delta_Y = np.diff(y)
     sampling_intervals = np.diff(t)
     average_sampling_interval = np.median(sampling_intervals)
