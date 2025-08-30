@@ -1,12 +1,12 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-  - family-names: "Sachuriga"
+  - family-names: ""
     given-names: "Sachuriga"
     orcid: "https://orcid.org/0000-0002-9776-4255"  
-title: "My Research Software"
-version: 2.0.4  # Match your repository's release version
-doi: 10.5281/zenodo.1234  # Optional: Add if you have a DOI from Zenodo or similar
-date-released: 2023-12-18  # Format: YYYY-MM-DD
-url: "https://github.com/yourusername/yourrepository"  # Your repo URL
-repository-code: "https://github.com/yourusername/yourrepository"  # Optional: For code-specific reference
+title: "Formatting ephys and behavioral date to .nwb format, code for Cajal Retzius cells paper"
+version: 0.1  
+doi: 10.5281/zenodo.16760325  
+date-released: 2025-08-07  
+url: "https://github.com/Sachuriga/quattrocolo-nwb4fp/"  
+repository-code: "https://github.com/Sachuriga/quattrocolo-nwb4fp/"  
