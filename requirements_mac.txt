@@ -1,0 +1,11 @@
+neurochat
+matplotlib
+numpy
+pynwb
+pynapple
+scipy
+scikit-learn
+elephant
+pandas
+seaborn
+astropy
