@@ -1,110 +1,115 @@
 [![DOI](https://zenodo.org/badge/799944513.svg)](https://doi.org/10.5281/zenodo.16760325)
 
-# Neuroscience Data to NWB Conversion Script
+# nwb4fp — Neuroscience data to NWB conversion
 
-This repository contains a Python package `nwb4fp`, designed to convert neuroscience data into the Neurodata Without Borders (NWB) format. It is specifically tailored for processing electrophysiology data from the open ephys system and behavioral tracking data analyzed with DeepLabCut.
+`nwb4fp` is a Python package for converting neuroscience data into the
+[Neurodata Without Borders (NWB)](https://www.nwb.org/) format. It is tailored for
+electrophysiology recorded with Open Ephys and behavioural tracking analysed with
+DeepLabCut, and also bundles the analysis code for the CR–CA1 project (see
+[Paper analyses](#paper-analyses) below).
 
 ## Introduction
 
-The `test_qmnwb` function checks whether the manually curated sorting files and the DLC file meet the requirements for the next step. This function creates a `4nwb_check.csv` file, allowing you to verify if the files meet the necessary criteria. The `run_qmnwb` function facilitates the conversion of neuroscience data into the NWB format, a standardized format for neurophysiology data sharing and storage. This script is particularly useful for researchers working with Mus musculus, focusing on electrophysiology and behavioral data. The `run_qmnwb` reads all phy outputs ending with the `{phy suffix}` folder under each individual animal and selects the curated `good` units to calculate the quality metrics using the `spikeinterface` package's built-in function. It then creates a new phy output folder ending with `{phy suffix}_manual` to prepare for conversion to the `.nwb` file.
+Two functions drive the conversion pipeline:
+
+- **`test_qmnwb`** checks whether the manually curated spike-sorting output and the
+  DeepLabCut files meet the requirements for conversion. It writes a `4nwb_check.csv`
+  file so you can confirm everything is in place before continuing.
+- **`run_qmnwb`** performs the conversion. It reads every phy output folder ending in
+  `{phy_suffix}` for each animal, keeps the units curated as `good`, computes quality
+  metrics with [SpikeInterface](https://github.com/SpikeInterface/spikeinterface), and
+  writes a new `{phy_suffix}_manual` folder that is then packaged into a `.nwb` file.
+
+The pipeline targets *Mus musculus* electrophysiology and behavioural data.
 
 ## Features
 
-- **Data Conversion**: Efficiently converts electrophysiology and behavioral data into the NWB format.
-- **Species and Demographic Specificity**: Required by 'nwbpy'.
-- **Video File Handling**: Automatically searches for and processes video files from specified directories, integrating them with the NWB dataset.
-- **Data Verification**: Generates a CSV file post-conversion to allow users to verify the integrity and completeness of the processed data.
+- **Data conversion**: turns Open Ephys electrophysiology and DeepLabCut behaviour into NWB.
+- **Species / demographic metadata**: collected as required by `pynwb`.
+- **Video handling**: finds and links the relevant video files into the NWB dataset.
+- **Verification**: writes a CSV after conversion so you can check the data is complete.
 
 ## Installation
 
-To use this script, you need to clone this repository and install the required Python package, `nwb4fp`.
+### From PyPI (recommended: in a fresh conda env)
 
-### Cloning the Repository
-
-Clone the repository to your local machine using the following command:
-
-```bash
-git clone <https://github.com/sachuriga283/QuattrocoloLab2nwb-nwb4fp.git>
-cd ./QuattrocoloLab2nwb-nwb4fp
-pip install requirements.txt
-```
-
-### Install with pipy
-```bash
-pip install nwb4fp
-```
-or create a condda env and install (recommended)
 ```bash
 conda create -n nwb4fp -y python
 conda activate nwb4fp
 pip install nwb4fp
 ```
 
-## Install spikeinterface
-Most of the functions in this package depend on SpikeInterface, and they will be updated to stay in same with the latest version of SpikeInterface. 
-For more information about SpikeInterface, please refer to `https://github.com/SpikeInterface/spikeinterface`
+### From source
 
-## Required Folder structure and the files for nwb4fp
-### -base_data_folder Structure
-The `-base_data_folder` is organized into two main subdirectories, each containing specific project-related files (recordings with phy output and videos with deeplabcut results). Here's the structure and description of the contained files:
-
-- `-base_data_folder`
-  - `Ephys_Video`
-    - `project_name`
-      - `fr"{video_name}{dlc_model_name}"_filtered.h5`: deeplabcut results for corresponding video file.
-      - `fr"{video_name}".avi`: Original video file.
-  - `Ephys_recording`
-    - `project_name`
-      - `individuals`
-        - `recording/recording nodes`
-          - `.continues`
-            - `sample_index.npy`: index of each ephys sampling point.
-            - `time_stemps.npy`: time stemps of each ephys sampling point (computer_based).
-          - `.events`
-            - `sample_index.npy`: index for each sampling point of TTL signal(which we used for aliging the time stemps).
-            - `time_stemps.npy`: time stemps of each TTL sampling point (Is camera base).
-            - `states.npy`: States signal of TTL signal, which is high low signal(-6 6 for 50Hz aquiring) refers to the start of the TTL and end of the TTL.
-        - `phy_output`
-          - `spike_times.npy`: this is `int` number which refers to the sampling index to - `.continues`  - `sample_index.npy`. it's contains all the spikes deteced by the sorting algorism.
-          - `recording.dat`: raw binary data of the recording.
-          - `spike_clusters.npy`: same length vector as - `spike_times.npy`, which labes the cluster name to each spikes.
-          - `cluster_info.tsv`: sunmmary info of the sorting.
-
-Please replace `project_name`, `video_name`, `dlc_model_name`, etc., with your specific project's details.
-
-
-## Usage (example custom python file for running the nwb4fp)
 ```bash
+git clone https://github.com/Sachuriga/nwb4fp.git
+cd nwb4fp
+pip install -r requirements.txt
+```
 
-from nwb4fp.main.main_create_nwb import run_qmnwb,test_qmnwb
+### SpikeInterface
+
+Most functions depend on SpikeInterface and track its latest release. See
+<https://github.com/SpikeInterface/spikeinterface> for details.
+
+## Expected folder structure
+
+`run_qmnwb` expects a `base_data_folder` with two subdirectories — the recordings
+(with phy output) and the videos (with DeepLabCut results):
+
+- `base_data_folder/`
+  - `Ephys_Video/`
+    - `project_name/`
+      - `{video_name}{dlc_model_name}_filtered.h5` — DeepLabCut results for the video
+      - `{video_name}.avi` — original video
+  - `Ephys_recording/`
+    - `project_name/`
+      - `individuals/`
+        - `recording nodes/`
+          - `.continuous/`
+            - `sample_index.npy` — index of each ephys sample
+            - `timestamps.npy` — timestamp of each ephys sample (computer clock)
+          - `.events/`
+            - `sample_index.npy` — sample index of each TTL event (used to align time)
+            - `timestamps.npy` — timestamp of each TTL event (camera clock)
+            - `states.npy` — TTL state (high/low; ±6 for 50 Hz), marking TTL on/off
+        - `phy_output/`
+          - `spike_times.npy` — sample index of every detected spike
+          - `recording.dat` — raw binary recording
+          - `spike_clusters.npy` — cluster label for each spike
+          - `cluster_info.tsv` — sorting summary
+
+Replace `project_name`, `video_name`, `dlc_model_name`, etc. with your own details.
+
+## Usage
+
+A minimal script that runs the check and then the conversion:
+
+```python
+from nwb4fp.main.main_create_nwb import run_qmnwb, test_qmnwb
 from pathlib import Path
-import pandas as pd
+
 
 def main():
-    import os
-    import sys
-
     base_data_folder = Path("base folder")
     project_name = "Your_project"
-    vedio_search_directory = base_data_folder/fr"Ephys_Vedio/{project_name}/"
-    path_save = base_data_folder/fr"nwb"
+    vedio_search_directory = base_data_folder / f"Ephys_Vedio/{project_name}/"
+    path_save = base_data_folder / "nwb"
 
-    #temp folder to save temporally created waveform folder from spikeinterface
-    temp_folder = Path(r'C:/temp_waveform/')
-    save_path_test=(r"Your prefered saving path/4nwb_check.csv")
+    # temp folder for the waveform folder SpikeInterface creates
+    temp_folder = Path(r"C:/temp_waveform/")
+    save_path_test = r"Your preferred saving path/4nwb_check.csv"
 
-    ## The function will copy the videos to the deeplabcut video folder, which were analyzed by older Deeplabcut models
-    idun_vedio_path=r"dlc_video_folder"
-    sex = "F" # or "M"
+    # videos are copied to the DeepLabCut video folder (analysed by older DLC models)
+    idun_vedio_path = r"dlc_video_folder"
+    sex = "F"  # or "M"
 
-    ## animals name for now only support 5 numbers str, for example here listed 6 animals
+    # animal names; currently only 5-character strings are supported
     animals = ["33331", "33332", "33333", "33334", "33335", "33336"]
 
-    ## animals ages for first recording day
-    age = "P45+"
+    age = "P45+"               # age at the first recording day
     species = "Mus musculus"
-    ## file suffix for phy output folder for example "phy_k"
-    file_suffix = "phy_k"
+    file_suffix = "phy_k"      # phy output folder suffix, e.g. "phy_k"
 
     test_qmnwb(animals,
                base_data_folder,
@@ -115,70 +120,54 @@ def main():
                vedio_search_directory,
                idun_vedio_path=idun_vedio_path)
 
-    ## check the 4nwb_check.csv file whether all the files (phy output and dlc .h5 file) is there and whether the file is competble to process quality metrix or not
+    # inspect 4nwb_check.csv: are all phy outputs + DLC .h5 files present and usable?
     while True:
-    user_input = input("Press 'c' to continue or 'q' to quit: ").strip().lower()
-    if user_input == 'c':
-        print("Continuing...")
-        continue  # This will continue the loop
-    elif user_input == 'q':
-        print("Quitting...")
-        break  # This will break out of the loop
-    else:
-        print("Invalid input. Please press 'c' to continue or 'q' to quit.")
+        user_input = input("Press 'c' to continue or 'q' to quit: ").strip().lower()
+        if user_input == "c":
+            print("Continuing...")
+            break
+        elif user_input == "q":
+            print("Quitting...")
+            return
+        else:
+            print("Invalid input. Please press 'c' to continue or 'q' to quit.")
 
-    ## conversionning the data to nwb format
+    # convert the data to NWB
     run_qmnwb(animals,
               base_data_folder,
               project_name,
               file_suffix,
-              sex,age,
+              sex, age,
               species,
               vedio_search_directory,
               path_save,
               temp_folder)
 
+
 if __name__ == "__main__":
     main()
 ```
 
-# Data & paths (reproduction notes)
+## Paper analyses
 
-This repository contains the **analysis code** for the CR–CA1 project. The raw and
-processed neural data (NWB files, spike-sorted unit tables, position tracking,
-LFP, rate maps, etc.) are **not** included — they live on a shared lab drive and
-are available from the authors on reasonable request.
+The analysis code for the CR–CA1 study lives under `src/nwb4fp/CR_CA1_paper/`,
+including the main- and supplementary-figure notebooks and the spatial-coding and
+LFP analyses.
 
-Many scripts and notebooks (especially under `src/nwb4fp/CR_CA1_paper/`) contain
-**hard-coded absolute paths** that point to that shared drive as it was mounted on
-the original analysis machines. They all refer to the *same* dataset, just mounted
-differently per OS:
+The raw and processed neural data (NWB files, spike-sorted unit tables, position
+tracking, LFP, rate maps) are **not** included in the repository; they are available
+from the authors on reasonable request. Notebook outputs have been cleared to keep the
+repository small — re-running a notebook against the data regenerates its figure as an
+editable PDF.
 
-| Path prefix in code            | What it is                                   |
-| ------------------------------ | -------------------------------------------- |
-| `S:\Sachuriga\...`             | shared drive on Windows (recording machine)  |
-| `Q:\sachuriga\...`             | shared drive on Windows (analysis machine)   |
-| `/Volumes/quattrocolo/crhip/...` | same drive mounted on macOS                |
-| `/Users/sachuriga/Desktop/...` | local working copies on the author's Mac     |
+## Support
 
-**To reproduce an analysis**, edit the path constants near the top of the relevant
-script/notebook so they point to your local copy of the data. Key inputs are:
+For questions or problems, please open an issue on this repository.
 
-- NWB session files (e.g. `*_phy_k_manual.nwb`) — position is read from the
-  `XY_mid_brain` field; spikes from the `units` table.
-- Per-session unit tables `*_units_table_withDLC.pkl`.
-- The aggregated functional-properties table
-  `functional_properties_with_python_measurements_*.pkl`.
+## Contributing
 
-Notebook outputs have been stripped from version control to keep the repository
-small; re-run the notebooks against your data to regenerate figures.
+Contributions are welcome — please fork the repository and open a pull request.
 
-# Support
-For any questions or issues, please open an issue on this repository, or contact the maintainers directly via GitHub Issues.
+## License
 
-# Contributing
-Contributions are welcome! Please fork the repository and submit a pull request with your proposed changes. For more information, see the contributing guide.
-
-# License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
+This project is licensed under the MIT License; see the [LICENSE](LICENSE) file.
