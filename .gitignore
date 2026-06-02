@@ -1,0 +1,67 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+.eggs/
+*.egg-info/
+*.egg
+.installed.cfg
+
+# ---- Build / packaging artifacts ----
+build/
+dist/
+wheels/
+sdist/
+*.whl
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# ---- Jupyter ----
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+profile_default/
+ipython_config.py
+
+# ---- Editor / IDE / tooling ----
+.vscode/
+.idea/
+.claude/
+*.swp
+*~
+
+# ---- OS junk ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ---- Large data (not for version control) ----
+# Raw and processed neural data live outside the repo; see README "Data & paths".
+# NOTE: figure assets (.png/.pdf/.gif/.svg) and small .npy probe metadata are
+# kept intentionally, so they are NOT globally ignored here.
+*.nwb
+*.pkl
+*.mat
+*.h5
+*.hdf5
+*.dat
+*.bin
+
+# Generated analysis caches
+*_cache.npz
+*_cache.npy
+
+# Spikeinterface / preprocessing temp folders
+**/_preprocessed_temp/
+**/*_preprocessed_temp/

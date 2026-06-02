@@ -142,6 +142,37 @@ if __name__ == "__main__":
     main()
 ```
 
+# Data & paths (reproduction notes)
+
+This repository contains the **analysis code** for the CR–CA1 project. The raw and
+processed neural data (NWB files, spike-sorted unit tables, position tracking,
+LFP, rate maps, etc.) are **not** included — they live on a shared lab drive and
+are available from the authors on reasonable request.
+
+Many scripts and notebooks (especially under `src/nwb4fp/CR_CA1_paper/`) contain
+**hard-coded absolute paths** that point to that shared drive as it was mounted on
+the original analysis machines. They all refer to the *same* dataset, just mounted
+differently per OS:
+
+| Path prefix in code            | What it is                                   |
+| ------------------------------ | -------------------------------------------- |
+| `S:\Sachuriga\...`             | shared drive on Windows (recording machine)  |
+| `Q:\sachuriga\...`             | shared drive on Windows (analysis machine)   |
+| `/Volumes/quattrocolo/crhip/...` | same drive mounted on macOS                |
+| `/Users/sachuriga/Desktop/...` | local working copies on the author's Mac     |
+
+**To reproduce an analysis**, edit the path constants near the top of the relevant
+script/notebook so they point to your local copy of the data. Key inputs are:
+
+- NWB session files (e.g. `*_phy_k_manual.nwb`) — position is read from the
+  `XY_mid_brain` field; spikes from the `units` table.
+- Per-session unit tables `*_units_table_withDLC.pkl`.
+- The aggregated functional-properties table
+  `functional_properties_with_python_measurements_*.pkl`.
+
+Notebook outputs have been stripped from version control to keep the repository
+small; re-run the notebooks against your data to regenerate figures.
+
 # Support
 For any questions or issues, please open an issue on this repository, or contact the maintainers directly via GitHub Issues.
 
