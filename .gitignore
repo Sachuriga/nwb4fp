@@ -37,6 +37,12 @@ ipython_config.py
 *.swp
 *~
 
+# ---- Private notes / review materials — never publish ----
+notes.md
+comment.md
+**/notes.md
+**/comment.md
+
 # ---- OS junk ----
 .DS_Store
 .DS_Store?

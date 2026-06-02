@@ -1,14 +1,14 @@
 """
-Mixed-effects re-analysis for the PLOS Biology revision.
+Mixed-effects statistics for the deep/superficial (Fig 4) and LFP (Fig 3) analyses.
 
-Addresses reviewer requests:
-  * R3 major #4 : "strongly suggest the use of mixed-effect models"; clarify the
-    statistical unit (mice vs recordings vs cells); test normality.
-  * R1 major #6 : report n animals and n cells per animal; the deep-vs-superficial
-    difference must be shown to be a genuine *differential* effect, i.e. a
-    genotype x layer INTERACTION, not just "significant in one, n.s. in the other".
-  * R3 minor #2 : distinguish a true spatial-coding deficit from a simple increase
-    in excitability -> in-field vs out-of-field firing-rate ratio (spatial S/N).
+What this does:
+  * uses mixed-effects models so the statistical unit is the animal, not the cell
+    or the recording (cells from one mouse aren't independent);
+  * reports n animals and n cells per animal;
+  * tests whether deep and superficial are *differentially* affected via a
+    genotype x layer interaction (not just "significant in one layer, n.s. in the other");
+  * separates a real spatial-coding deficit from a plain rise in excitability using
+    the in-field vs out-of-field firing-rate ratio (spatial signal-to-noise).
 
 Statistical model
 -----------------
@@ -52,10 +52,10 @@ def per_animal_p(d, var, log=False):
     """Conservative robustness check: collapse to one mean per animal, then
     Welch t-test (if both groups' animal-means pass Shapiro) or Mann-Whitney.
 
-    NOT used in the default submission output (reviewers asked for mixed models).
-    Kept ready in case a reviewer requests an explicit animal-level analysis:
-    with 5 mice/group the mixed model's random-effect variance is estimated near
-    the boundary, so this animal-level test is the conservative cross-check.
+    Not in the default output (the figures use the mixed model). Handy as a
+    cross-check: with only 5 mice/group the mixed model's random-effect variance
+    sits near the boundary, so collapsing to per-animal means is the conservative
+    sanity check.
     """
     from scipy.stats import ttest_ind, mannwhitneyu, shapiro
     d = d.copy()
@@ -110,9 +110,9 @@ def deep_superficial():
         print(f"{lab:20s}{m.pvalues[k]:15.4f}")
 
     print("\n(3) In-field vs out-of-field firing  (ALL pyramidal cells with a detected field)")
-    # NB: computed on all pyramidal cells, NOT only place cells. Restricting to
-    # place cells conditions on the outcome (high-S/N cells) and biases away the
-    # very effect of interest (R3 minor #2: true coding deficit vs. excitability).
+    # NB: all pyramidal cells, NOT only place cells. Restricting to place cells
+    # conditions on the outcome (high-S/N cells) and biases away the very effect
+    # we're after (true coding deficit vs. just higher excitability).
     fd = df[df["in_out_ratio"].notna()]
     print(f"{'metric':16s}{'layer':12s}{'p(exp)':>9s}{'med_ctrl':>10s}{'med_exp':>10s}{'n_cells':>9s}{'n_mice':>8s}")
     for var in ["in_field_rate", "out_field_rate", "in_out_ratio"]:
