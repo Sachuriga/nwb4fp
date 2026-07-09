@@ -3,7 +3,7 @@ import pytest
 
 
 def test_calc_population_vector_correlation():
-    from spatial_maps.stats import population_vector_correlation as pvcorr
+    from nwb4fp.analyses.functional_scores import population_vector_correlation as pvcorr
     rmaps1 = np.array([
         [
             [1, 0.1],

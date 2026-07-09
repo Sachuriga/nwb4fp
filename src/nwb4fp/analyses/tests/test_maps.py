@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
-from spatial_maps.maps import SpatialMap
+from nwb4fp.analyses.maps import SpatialMap
 import quantities as pq
-from spatial_maps.tools import make_test_grid_rate_map, make_test_spike_map
+from nwb4fp.analyses.tools import make_test_grid_rate_map, make_test_spike_map
 
 
 def test_rate_map():

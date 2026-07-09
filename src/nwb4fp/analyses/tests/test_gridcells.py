@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
-from spatial_maps import SpatialMap
+from nwb4fp.analyses.maps import SpatialMap
 import quantities as pq
-from spatial_maps.tools import (
+from nwb4fp.analyses.tools import (
     make_test_grid_rate_map, make_test_spike_map, autocorrelation)
-from spatial_maps.fields import find_peaks
-from spatial_maps.gridcells import (
+from nwb4fp.analyses.fields import find_peaks
+from nwb4fp.analyses.gridcells import (
     gridness, spacing_and_orientation, separate_fields_by_distance)
 
 

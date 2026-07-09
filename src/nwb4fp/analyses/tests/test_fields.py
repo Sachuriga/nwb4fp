@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 import quantities as pq
-from spatial_maps.tools import make_test_grid_rate_map, make_test_border_map
-from spatial_maps.fields import (
+from nwb4fp.analyses.tools import make_test_grid_rate_map, make_test_border_map
+from nwb4fp.analyses.fields import (
     separate_fields_by_laplace, find_peaks, calculate_field_centers,
-    in_field, distance_to_edge_function, map_pass_to_unit_circle)
+    which_field as in_field, distance_to_edge_function, map_pass_to_unit_circle)
 
 
 def test_find_peaks():
