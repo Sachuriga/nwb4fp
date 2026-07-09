@@ -34,6 +34,7 @@ ipython_config.py
 .vscode/
 .idea/
 .claude/
+*.code-workspace
 *.swp
 *~
 

@@ -44,8 +44,12 @@ pip install nwb4fp
 ```bash
 git clone https://github.com/Sachuriga/nwb4fp.git
 cd nwb4fp
-pip install -r requirements.txt
+pip install -e .            # runtime install
+pip install -e ".[dev]"     # + test/lint/build tools
 ```
+
+Optional extras: `.[phy]` (interactive phy GUI), `.[dlc]` (DeepLabCut kinematics),
+or `.[all]` for both.
 
 ### SpikeInterface
 
@@ -148,17 +152,24 @@ if __name__ == "__main__":
     main()
 ```
 
+## Repository layout
+
+```
+src/nwb4fp/     installable library (main / preprocess / postprocess / analyses / data)
+paper/          CR–CA1 paper reproducibility code — NOT part of the installed package
+examples/       demo notebooks and stand-alone run-scripts
+```
+
+Because the package uses a `src/` layout, everything outside `src/` (`paper/`,
+`examples/`) is excluded from the built wheel/sdist — `pip install nwb4fp` gives you the
+library only.
+
 ## Paper analyses
 
-The analysis code for the CR–CA1 study lives under `src/nwb4fp/CR_CA1_paper/`,
-including the main- and supplementary-figure notebooks and the spatial-coding and
-LFP analyses.
-
-The raw and processed neural data (NWB files, spike-sorted unit tables, position
-tracking, LFP, rate maps) are **not** included in the repository; they are available
-from the authors on reasonable request. Notebook outputs have been cleared to keep the
-repository small — re-running a notebook against the data regenerates its figure as an
-editable PDF.
+The analysis code for the CR–CA1 study lives under [`paper/CR_CA1_paper/`](paper/),
+including the main- and supplementary-figure notebooks and the spatial-coding and LFP
+analyses. See [`paper/README.md`](paper/README.md) for how to reproduce the figures and
+for the data-availability statement.
 
 ## Support
 
