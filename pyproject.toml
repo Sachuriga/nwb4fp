@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nwb4fp"
+dynamic = ["version"]
+description = "Convert Open-Ephys electrophysiology and DeepLabCut behaviour to the NWB format."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Sachuriga", email = "sachuriga.sachuriga@ntnu.no" }]
+keywords = [
+    "neuroscience",
+    "electrophysiology",
+    "NWB",
+    "Open Ephys",
+    "DeepLabCut",
+    "SpikeInterface",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "matplotlib",
+    "seaborn",
+    "h5py",
+    "python-dateutil",
+    "astropy",
+    "quantities",
+    "scikit-learn",
+    "scikit-image",
+    "pycircstat",
+    "pynwb",
+    "neuroconv",
+    "spikeinterface",
+    "probeinterface",
+]
+
+[project.optional-dependencies]
+# Interactive phy spike-sorting GUI (Qt); heavy, install only if needed.
+phy = ["phy"]
+# DeepLabCut kinematics helpers.
+dlc = ["dlc2kinematics"]
+# Everything optional, for a full working environment.
+all = ["phy", "dlc2kinematics"]
+# Development / CI.
+dev = ["pytest", "ruff", "build", "twine"]
+
+[project.urls]
+Homepage = "https://github.com/Sachuriga/nwb4fp"
+Repository = "https://github.com/Sachuriga/nwb4fp"
+Issues = "https://github.com/Sachuriga/nwb4fp/issues"
+DOI = "https://doi.org/10.5281/zenodo.16760325"
+
+[tool.setuptools.dynamic]
+version = { attr = "nwb4fp.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+nwb4fp = ["data/*.prb"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/nwb4fp/analyses/tests", "src/nwb4fp/analyses/phase_precession/tests"]
+addopts = "-ra"
+
+[tool.ruff]
+# Lint only — do not reformat the existing scientific code base wholesale.
+line-length = 100
+target-version = "py39"
+extend-exclude = ["paper", "examples", "build", "dist"]
+
+[tool.ruff.lint]
+# Conservative rule set: real errors, not style churn.
+select = ["E9", "F63", "F7", "F82", "F401"]
