@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+from nwb4fp.postprocess.head_direction import calc_head_direction, degrees_to_pi_range
+
 
 def main():
     vedio_search_directory = 'S:/Sachuriga/Ephys_Vedio/CR_CA1/'
@@ -296,46 +298,6 @@ def load_positions(path,vedio_search_directory,folder_path,UD,post_fix_dlc: str 
 
     arr_with_new_col =  np.insert(positions , 0, f_time[:len(positions)], axis=1) # type: ignore
     return arr_with_new_col
-
-def calc_head_direction(positions):
-    """
-    Calculate head direction.
-
-    Calculates the head direction for each position sample pair. Direction
-    is defined as east = 0 degrees, north = 90 degrees, west = 180 degrees,
-    south = 270 degrees. Direction is set to NaN for missing samples.
-    Position matrix contains information about snout and neck. Head
-    direction is the counter-clockwise direction from back LED to the front.
-
-    Parameters:
-    positions (np.array): Animal's position data, Nx5. Position data should
-                          contain timestamps (1 column), X/Y coordinates of
-                          first LED (2 and 3 columns correspondingly), X/Y
-                          coordinates of the second LED (4 and 5 columns
-                          correspondingly).
-                          it is assumed that positions[:, 1:2] correspond to
-                          front LED, and positions[:, 3:4] to the back LED.
-                          The resulting hd is the direction from back LED to
-                          the front LED.
-
-    Returns:
-    np.array: Vector of head directions in degrees.
-    """
-
-    if positions.shape[1] < 5:
-        raise ValueError('Position data should be 2D (type ''help calc_head_direction'' for details).')
-
-    x1 = positions[:, 1]
-    y1 = positions[:, 2]
-    x2 = positions[:, 3]
-    y2 = positions[:, 4]
-
-    hd = np.remainder(np.arctan2(y2-y1, x2-x1) * 180 / np.pi + 180, 360)
-    return degrees_to_pi_range(hd)
-
-def degrees_to_pi_range(degrees):
-    radians = np.radians(degrees)
-    return radians
 
 def moving_direction(pos, window_points=[1, 1], step=1):
     newPos = pos.copy()
