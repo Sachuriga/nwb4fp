@@ -1,4 +1,5 @@
 import numpy as np
+import h5py
 from scipy.ndimage import gaussian_filter
 import seaborn as sns
 from itertools import chain

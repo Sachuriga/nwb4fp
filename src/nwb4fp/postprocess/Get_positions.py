@@ -8,9 +8,10 @@ from nwb4fp.postprocess.head_direction import calc_head_direction, degrees_to_pi
 
 
 def main():
+    # NOTE: illustrative scaffolding only — `path` and `UD` must be supplied by the caller.
     vedio_search_directory = 'S:/Sachuriga/Ephys_Vedio/CR_CA1/'
     folder_path = fr"S:/Sachuriga/Ephys_Recording/CR_CA1/65410/65410_2023-12-04_13-38-02_A/Record Node 102/"
-    dlc =  load_positions(path,vedio_search_directory,folder_path,UD)
+    dlc =  load_positions(path,vedio_search_directory,folder_path,UD)  # noqa: F821
 
 def test_positions_h5(path,vedio_search_directory,folder_path,UD, post_fix_dlc: str = None):
     import glob

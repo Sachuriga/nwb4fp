@@ -1,6 +1,6 @@
 import numpy as np
 from .tools import autocorrelation, fftcorrelate2d, masked_corrcoef2d
-from .fields import find_peaks
+from .fields import find_peaks, separate_fields_by_laplace, calculate_field_centers
 
 
 def separate_fields_from_distance(rate_map):

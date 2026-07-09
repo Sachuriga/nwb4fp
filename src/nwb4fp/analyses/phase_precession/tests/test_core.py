@@ -1,6 +1,11 @@
 import pytest
 import numpy as np
 
+# phase_precession depends on pycircstat, whose package import pulls in the unmaintained
+# ``nose`` library; skip cleanly where that dependency chain is unavailable rather than error.
+pytest.importorskip("pycircstat", reason="pycircstat (phase-precession dependency) not importable")
+
+
 def test_cl_corr():
     from nwb4fp.analyses.phase_precession import cl_corr
     x = np.linspace(0, 1, 100)
