@@ -63,7 +63,9 @@ def per_animal_p(d, var, log=False):
     d = d.dropna(subset=["y"])
     if log:
         d = d[d["y"] > 0]
-    am = d.groupby(["group_ani", "animal_id"])["y"].mean().reset_index()
+    # observed=True: group_ani is Categorical, so the default would emit every
+    # group x animal combination (including impossible ones) as NaN means.
+    am = d.groupby(["group_ani", "animal_id"], observed=True)["y"].mean().reset_index()
     c = am[am.group_ani == "control"]["y"].values
     e = am[am.group_ani == "exp"]["y"].values
     if len(c) >= 3 and len(e) >= 3 and shapiro(c)[1] > 0.05 and shapiro(e)[1] > 0.05:
@@ -131,6 +133,104 @@ def deep_superficial():
             sub = t[(t.group_ani == g) & (t.sub_population == sp)]
             vals = sorted(v for v in sub["n"] if v > 0)
             print(f"  {g:8s} {sp:12s}: {vals}  (sum={sum(vals)}, {len(vals)} mice)")
+
+
+# ====================================================================
+# PART 1b — Composite spatial-coding index (power for the interaction)
+# ====================================================================
+# Motivation: the six spatial-coding metrics are NOT six independent pieces of
+# evidence. On these data Information_content_rate and Sparsity correlate at
+# r = -0.99, and info/selectivity/in_out_ratio all sit at r ~ 0.9 -- they largely
+# measure ONE latent axis. Testing them separately therefore spends power on
+# redundancy and then pays an unnecessary multiple-comparison penalty. Collapsing
+# them into a single pre-specified endpoint is the standard remedy.
+#
+# HONESTY REQUIREMENTS for using this:
+#   * This is ONE endpoint, decided a priori -- not a fishing expedition run
+#     after seeing which individual metrics came out lowest. Say so in Methods.
+#   * The composite is built WITHOUT using genotype or layer labels (z-scoring
+#     and PCA are unsupervised), so it cannot manufacture a group difference.
+#   * It does not replace the per-metric table; report both.
+#   * A non-significant interaction here is still a non-significant interaction.
+
+# (metric, label, log-transform?, sign so that +1 => BETTER spatial coding)
+SPATIAL_METRICS = [
+    ("Information_content_rate", "Info content", True, +1),
+    ("Sparsity", "Sparsity", False, -1),          # higher sparsity = less selective
+    ("Field_size", "Field size", True, -1),       # bigger field = less precise
+    ("Selectivity", "Selectivity", True, +1),
+    ("stability_ma", "Stability", False, +1),
+    ("in_out_ratio", "In/out ratio", True, +1),   # spatial signal-to-noise
+]
+
+
+def build_composite(df, metrics=SPATIAL_METRICS):
+    """Add `coding_z` (mean of aligned z-scores) and `coding_pc1` to df.
+
+    Signs are aligned so that HIGHER = BETTER spatial coding. Transforms match
+    those used for the per-metric LMMs. Complete cases only.
+    Returns (df_with_index, info_dict).
+    """
+    from sklearn.decomposition import PCA
+
+    d = df.copy()
+    cols = []
+    for var, _lab, log, sign in metrics:
+        x = pd.to_numeric(d[var], errors="coerce")
+        if log:
+            x = np.log(x.where(x > 0))
+        col = f"_z_{var}"
+        d[col] = sign * (x - x.mean()) / x.std()   # unsupervised standardisation
+        cols.append(col)
+
+    d = d.dropna(subset=cols).copy()
+    d["coding_z"] = d[cols].mean(axis=1)
+
+    pca = PCA(n_components=1).fit(d[cols].values)
+    pc1 = pca.transform(d[cols].values)[:, 0]
+    # orient PC1 to agree with the z-mean (PCA sign is arbitrary)
+    if np.corrcoef(pc1, d["coding_z"])[0, 1] < 0:
+        pc1, load = -pc1, -pca.components_[0]
+    else:
+        load = pca.components_[0]
+    d["coding_pc1"] = pc1
+
+    info = {"n": len(d), "var_explained": pca.explained_variance_ratio_[0],
+            "loadings": dict(zip([m[1] for m in metrics], load.round(3))),
+            "r_z_pc1": float(np.corrcoef(d["coding_pc1"], d["coding_z"])[0, 1])}
+    return d, info
+
+
+def composite_interaction(df=None):
+    """Genotype x layer interaction on the single composite endpoint."""
+    if df is None:
+        df = pd.read_pickle(FUNCTIONAL_TABLE)
+        df = df[(df["buzaki_py_cell_type"] == "pyramidal") & (df["session"] == "A")].copy()
+        df["animal_id"] = df["animal_id"].astype(str)
+        df["group_ani"] = pd.Categorical(genotype(df["animal_id"]), categories=["control", "exp"])
+        df["sub_population"] = pd.Categorical(df["sub_population"], categories=["deep", "superficial"])
+
+    d, info = build_composite(df)
+    print(f"\nComposite built on {info['n']} complete-case cells; "
+          f"PC1 explains {100 * info['var_explained']:.1f}% of variance; "
+          f"r(PC1, z-mean) = {info['r_z_pc1']:.3f}")
+    print("  PC1 loadings (aligned, + = better coding):", info["loadings"])
+
+    for idx in ["coding_z", "coding_pc1"]:
+        print(f"\n--- {idx} ---")
+        for sp in ["deep", "superficial"]:
+            s = d[d.sub_population == sp]
+            m = lmm(s, idx)
+            t = "group_ani[T.exp]"
+            ci = m.conf_int().loc[t]
+            print(f"  {sp:12s} genotype effect p={m.pvalues[t]:.4f}  "
+                  f"beta={m.params[t]:+.3f} [{ci[0]:+.3f},{ci[1]:+.3f}]  "
+                  f"n={int(m.model.endog.shape[0])} cells, {s.animal_id.nunique()} mice")
+        m = lmm(d, idx, formula="y ~ group_ani*sub_population")
+        k = [t for t in m.pvalues.index if ":" in t][0]
+        ci = m.conf_int().loc[k]
+        print(f"  {'INTERACTION':12s} p={m.pvalues[k]:.4f}  "
+              f"beta={m.params[k]:+.3f} [{ci[0]:+.3f},{ci[1]:+.3f}]")
 
 
 # ====================================================================

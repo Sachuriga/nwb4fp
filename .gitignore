@@ -43,6 +43,11 @@ notes.md
 comment.md
 **/notes.md
 **/comment.md
+# figures/tables made only for the response to reviewers (unpublished data)
+FigR*_*.*
+**/FigR*_*.*
+response_to_reviewers*
+**/response_to_reviewers*
 
 # ---- OS junk ----
 .DS_Store
