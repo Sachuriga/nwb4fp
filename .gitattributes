@@ -1,0 +1,8 @@
+# Strip Jupyter/Zeppelin notebook outputs before they are staged, so cell outputs
+# (plots, large dataframes) are never committed. This rule travels with the repo;
+# each clone must still activate the filter once:
+#     pip install nbstripout && nbstripout --install
+# Without nbstripout installed the filter is simply skipped (outputs not stripped),
+# so this file is safe for collaborators who have not set it up.
+*.ipynb filter=nbstripout diff=ipynb
+*.zpln filter=nbstripout

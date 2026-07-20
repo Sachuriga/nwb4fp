@@ -126,6 +126,14 @@ def deep_superficial():
             print(f"{var:16s}{sp:12s}{m.pvalues['group_ani[T.exp]']:9.4f}"
                   f"{mc:10.2f}{me:10.2f}{int(m.model.endog.shape[0]):9d}{s['animal_id'].nunique():8d}")
 
+    print("\n(3b) Genotype x layer INTERACTION for in/out-field metrics"
+          "  [value ~ genotype*layer + (1|animal)]")
+    print(f"{'metric':16s}{'interaction p':>15s}")
+    for var in ["in_field_rate", "out_field_rate", "in_out_ratio"]:
+        m = lmm(fd, var, log=True, formula="y ~ group_ani*sub_population")
+        k = [t for t in m.pvalues.index if ":" in t][0]
+        print(f"{var:16s}{m.pvalues[k]:15.4f}")
+
     print("\n(4) Cells contributed per animal")
     t = df.groupby(["group_ani", "sub_population", "animal_id"]).size().reset_index(name="n")
     for g in ["control", "exp"]:
@@ -260,11 +268,19 @@ def _band_sum(v, lo, hi, fs=1250):
 
 def lfp():
     df = pd.read_pickle(LFP_TABLE)
+    # Fig 3 is the session-A open-field baseline; keep only those recordings so the
+    # LFP models match the figure (session_id is "ID_date_time_A/B/C"). The
+    # deep/superficial analysis above already restricts to session A via its own
+    # `session` column; this table instead carries the session letter in session_id.
+    df = df[df["session_id"].astype(str).str.split("_").str[3] == "A"].copy()
     df["animal_id"] = df["animal_id"].astype(str)
     df["group_ani"] = pd.Categorical(genotype(df["animal_id"]), categories=["control", "exp"])
 
-    for c in ["slow_event_rate_py", "fast_event_rate_py",
-              "slow_theta_gamma_coupling_py", "fast_theta_gamma_coupling_py"]:
+    # Slow gamma is measured in stratum radiatum (where CA3 Schaffer input terminates
+    # and slow gamma is maximal), fast gamma in the pyramidal layer -- the same
+    # channel assignment used for the power panels and stated in the R2.1 response.
+    for c in ["slow_event_rate_sr", "fast_event_rate_py",
+              "slow_theta_gamma_coupling_sr", "fast_theta_gamma_coupling_py"]:
         df[c + "_m"] = df[c].apply(_scalar)
     for layer in ["py", "sr"]:
         col = f"lfp_{layer}_norm_run"
@@ -277,10 +293,10 @@ def lfp():
     tests = [("py_theta", "Theta power (py)", True), ("py_slowg", "Slow-gamma power (py)", True),
              ("py_fastg", "Fast-gamma power (py)", True), ("sr_slowg", "Slow-gamma power (SR)", True),
              ("sr_fastg", "Fast-gamma power (SR)", True),
-             ("slow_event_rate_py_m", "Slow-gamma event rate", False),
-             ("fast_event_rate_py_m", "Fast-gamma event rate", False),
-             ("slow_theta_gamma_coupling_py_m", "Slow theta-gamma coupling", False),
-             ("fast_theta_gamma_coupling_py_m", "Fast theta-gamma coupling", False)]
+             ("slow_event_rate_sr_m", "Slow-gamma event rate (SR)", False),
+             ("fast_event_rate_py_m", "Fast-gamma event rate (py)", False),
+             ("slow_theta_gamma_coupling_sr_m", "Slow theta-gamma coupling (SR)", False),
+             ("fast_theta_gamma_coupling_py_m", "Fast theta-gamma coupling (py)", False)]
     print(f"\n{'metric':30s}{'p(exp)':>9s}{'mean_ctrl':>11s}{'mean_exp':>10s}{'n_sess':>8s}{'n_mice':>8s}")
     for var, lab, log in tests:
         m = lmm(df, var, log)

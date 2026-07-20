@@ -35,7 +35,8 @@ import speed_coding_stats as S                 # noqa: E402
 FS = R.LFP_FS
 SR = 30000.0
 PRB = "/Users/sachuriga/Desktop/code/nwb4fp/src/nwb4fp/data/ASSY-236-F.prb"
-OUT = "/Users/sachuriga/Desktop/Projects/CR_CA1_paper/Manuscript/FigR1_ripple_validation.png"
+STEM = "/Users/sachuriga/Desktop/Projects/CR_CA1_paper/Manuscript/FigR1_ripple_validation"
+OUT = STEM + ".png"
 OUT_PDF = OUT.replace(".png", ".pdf")
 OUT_SVG = OUT.replace(".png", ".svg")
 
@@ -153,7 +154,10 @@ def main():
     axC.axhline(0, color="k", lw=0.8)
     axC.set_title("C", fontsize=11, loc="left", weight="bold")
 
-    fig.savefig(OUT, dpi=300, bbox_inches="tight")
+    # 1200 dpi for submission; .pdf/.svg written alongside so the three formats
+    # never drift apart
+    for ext in (".png", ".pdf", ".svg"):
+        fig.savefig(STEM + ext, dpi=1200, bbox_inches="tight")
     fig.savefig(OUT_PDF, bbox_inches="tight")          # vector, editable lines + text
     fig.savefig(OUT_SVG, bbox_inches="tight")          # in case you prefer Inkscape
     print("wrote", OUT)

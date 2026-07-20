@@ -60,7 +60,16 @@ SPEED_TABLE = ("/Users/sachuriga/Desktop/Projects/CR_CA1_paper/tables/"
                "functional_properties_with_python_measurements.pkl")
 
 SHUFFLE_PCT = 99      # percentile of a cell's own shuffle distribution
-FIXED_CUT = 0.3       # the |r| cut used in the original figures
+FIXED_CUT = 0.3       # |speed score| cut of Gois & Tort, Cell Reports 2018
+# Speed cells are defined as |speed score| > 0.3, following Gois & Tort (2018),
+# whose CA1 speed-score distribution is bimodal with a trough at that value. Our
+# own distribution reproduces that structure (main peak at 0-0.1, trough at
+# 0.30-0.40, second mode at 0.55-0.65), so the cut is supported both by
+# precedent and by the data. The shuffle criterion is retained as a sensitivity
+# analysis: it tests whether a cell's speed correlation is distinguishable from
+# chance, which for pyramidal cells is satisfied at |r| ~ 0.07 and therefore
+# does not identify speed cells in the sense the literature uses the term.
+CRITERION = "fixed"
 SESSION = "A"
 CELL_TYPES = ["pyramidal", "narrow_spike_interneurons"]
 
@@ -87,13 +96,15 @@ def load(session=SESSION, cell_types=CELL_TYPES, table=SPEED_TABLE):
     return df
 
 
-def speed_cell_flag(df, method="shuffle", pct=SHUFFLE_PCT, fixed=FIXED_CUT):
+def speed_cell_flag(df, method=None, pct=SHUFFLE_PCT, fixed=FIXED_CUT):
     """Flag speed cells, either against each cell's own shuffle null or a fixed cut.
 
     Returns an int Series (1 = speed cell). Cells lacking a usable shuffle
     distribution get NaN under ``method="shuffle"`` so they drop out of the model
     rather than being silently counted as non-speed cells.
     """
+    if method is None:
+        method = CRITERION
     if method == "fixed":
         return (pd.to_numeric(df["speed_score"], errors="coerce").abs() > fixed).astype(float)
 

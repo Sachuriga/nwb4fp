@@ -164,7 +164,7 @@ def celltype_rows():
     # analogue of the LMMs above. (A population-averaged GEE is reported in the
     # footnote; its SEs are anticonservative with only ~10 clusters.)
     d = df.copy()
-    d["is_speed"] = S.speed_cell_flag(d, method="shuffle")
+    d["is_speed"] = S.speed_cell_flag(d)   # |speed score| > 0.3 (Gois & Tort 2018)
     for ct, ctlab in [("pyramidal", "pyramidal"),
                       ("narrow_spike_interneurons", "narrow-spiking interneuron")]:
         sub = d[d.cell_type == ct].dropna(subset=["is_speed"])

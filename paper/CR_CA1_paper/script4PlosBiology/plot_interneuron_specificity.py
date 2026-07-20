@@ -61,6 +61,9 @@ STEM = os.path.join(OUTDIR, "FigR2_interneuron_specificity")
 
 # The paper's colours: interneurons cyan/magenta, pyramidal cells blue/red.
 INT_CTRL, INT_EXP = "cyan", "magenta"
+# wide-spiking interneurons: darker shades of the interneuron colours, so the two
+# interneuron classes read as one family while staying distinguishable
+WIDE_CTRL, WIDE_EXP = "#149c9c", "#9c1490"
 PY_CTRL, PY_EXP = "blue", "red"
 XLABELS = ["CR;DTA-", "CR;DTA+"]
 N_EXAMPLES = 12
@@ -143,7 +146,8 @@ def def_panel(ax, df_all, df_int):
     c, e = np.histogram(obs, bins=100, density=True)
     ax.stairs(c, e, color="black")
 
-    thr = np.percentile(np.abs(sh), S.SHUFFLE_PCT)
+    # dashed lines mark the criterion actually applied: |speed score| > 0.3
+    thr = S.FIXED_CUT
     for x in (-thr, thr):
         ax.axvline(x, color="grey", ls="--", lw=1)
     bare(ax)
@@ -215,13 +219,19 @@ def violin_panel(ax, sub, col, ylabel, ctrl_color, exp_color, p, log=False):
     ax.set_xlabel("")
     bare(ax)
     ax.set_xticks([0, 1])
-    ax.set_xticklabels(XLABELS, rotation=-30)
+    ax.set_xticklabels(XLABELS, rotation=0, fontsize=5)
     if log:
         lo, hi = ax.get_ylim()
         ticks = [t for t in [-1, 0, 1, 2] if lo - 0.3 <= t <= hi + 0.3]
         ax.set_yticks(ticks)
         ax.set_yticklabels([f"{10.0**t:g}" for t in ticks])
     add_p(ax, p)
+
+
+def row_label(ax, text):
+    """Population name to the left of a row, outside the axes."""
+    ax.text(0.0, 1.42, text, transform=ax.transAxes, fontsize=6.5,
+            fontweight="bold", ha="left", va="top", clip_on=False)
 
 
 def add_p(ax, p, x=(0, 1)):
@@ -262,7 +272,7 @@ def stacked_panel(ax, sub, colors, p):
 
     ax.set_ylabel("%Neurons")
     ax.set_xticks(x)
-    ax.set_xticklabels(XLABELS, rotation=-30)
+    ax.set_xticklabels(XLABELS, rotation=0, fontsize=5)
     ax.legend().set_visible(False)
     bare(ax)
     add_p(ax, p, x=(x[0], x[1]))
@@ -272,14 +282,24 @@ def stacked_panel(ax, sub, colors, p):
 # ------------------------------------------------------------------ figure
 def main():
     style()
-    df = S.load()
-    df["is_speed"] = S.speed_cell_flag(df, method="shuffle")
+    # Wide-spiking interneurons are included as a second, independent interneuron
+    # class: NDNF is expressed in neurogliaform/ivy cells, which are broad-spiking
+    # with slow ACG rise times and therefore absent from the narrow-spiking sample.
+    # They are the population an allele- or leak-driven off-target effect would hit
+    # first, so they belong in a specificity control (Reviewer #1.1/#1.2).
+    CELL_TYPES = ["pyramidal", "narrow_spike_interneurons", "wide_spike_interneurons"]
+    df = S.load(cell_types=CELL_TYPES)
+    df["is_speed"] = S.speed_cell_flag(df)   # |speed score| > 0.3 (Gois & Tort 2018)
     df_a = df.dropna(subset=["is_speed"])
     df_int = df_a[df_a["cell_type"] == "narrow_spike_interneurons"]
+    df_wide = df_a[df_a["cell_type"] == "wide_spike_interneurons"]
     df_py = df_a[df_a["cell_type"] == "pyramidal"]
 
-    fig = plt.figure(figsize=(7.2, 9), dpi=1200)
-    gs = gridspec.GridSpec(6, 6, height_ratios=[1] * 6, width_ratios=[1] * 6)
+    # Rows 0-3 hold the example cells on a 6-column grid; the summary rows below
+    # use three double-width panels each, so that the violins and the CR;DTA-/+
+    # tick labels have room. One row per population, same three measures.
+    fig = plt.figure(figsize=(7.2, 11.5), dpi=1200)
+    gs = gridspec.GridSpec(8, 6, height_ratios=[1] * 8, width_ratios=[1] * 6)
     rng = np.random.default_rng(0)
     stats_out = []
 
@@ -302,26 +322,28 @@ def main():
             f"{s.loc[idx, 'animal_id'].nunique()} mice.")
 
     # ---- row 4: definition + interneuron comparisons
-    thr = def_panel(fig.add_subplot(gs[4, 0]), df_a, df_int)
-    density_panel(fig.add_subplot(gs[4, 1]), df_int, df_py, thr)
-    fr_py, fr_int = celltype_fraction_panel(fig.add_subplot(gs[4, 2]), df_int, df_py)
+    thr = def_panel(fig.add_subplot(gs[4, 0:2]), df_a, df_int)
+    density_panel(fig.add_subplot(gs[4, 2:4]), df_int, df_py, thr)
+    fr_py, fr_int = celltype_fraction_panel(fig.add_subplot(gs[4, 4:6]), df_int, df_py)
 
     p_rate, b, cl, ch, nc, nm = S.lmm_ci(df_int, "log_rate")
-    violin_panel(fig.add_subplot(gs[4, 3]), df_int, "mean_firing_rate",
+    ax_r4 = fig.add_subplot(gs[5, 0:2])
+    violin_panel(ax_r4, df_int, "mean_firing_rate",
                  "Firing rate (Hz)", INT_CTRL, INT_EXP, p_rate, log=True)
+    row_label(ax_r4, f"Narrow-spiking interneurons (n = {len(df_int)})")
     stats_out.append(f"Interneurons, firing rate: LMM on log rate, animal random "
                      f"intercept, p = {p_rate:.4f}, beta = {b:+.3f} [{cl:+.3f}, "
                      f"{ch:+.3f}], n = {nc} cells from {nm} mice.")
 
     p_ss, b, cl, ch, nc, nm = S.lmm_ci(df_int, "speed_z")
-    violin_panel(fig.add_subplot(gs[4, 4]), df_int, "speed_score",
+    violin_panel(fig.add_subplot(gs[5, 2:4]), df_int, "speed_score",
                  "Speed score", INT_CTRL, INT_EXP, p_ss)
     stats_out.append(f"Interneurons, speed score: LMM on Fisher-z(r), animal random "
                      f"intercept, p = {p_ss:.4f}, beta = {b:+.3f} [{cl:+.3f}, "
                      f"{ch:+.3f}], n = {nc} cells from {nm} mice.")
 
     orr, cl, ch, p_frac = glmm_binary(df_int)
-    stacked_panel(fig.add_subplot(gs[4, 5]), df_int,
+    stacked_panel(fig.add_subplot(gs[5, 4:6]), df_int,
                   [[INT_CTRL, "#C7FDFD"], [INT_EXP, "#FDC7F8"]], p_frac)
     pc = 100 * df_int[df_int.group_ani == "control"]["is_speed"].mean()
     pe = 100 * df_int[df_int.group_ani == "exp"]["is_speed"].mean()
@@ -332,14 +354,25 @@ def main():
 
     # ---- row 5: the same two measures in PYRAMIDAL cells, where it does change
     p_rate_py, b, cl, ch, nc, nm = S.lmm_ci(df_py, "log_rate")
-    violin_panel(fig.add_subplot(gs[5, 3]), df_py, "mean_firing_rate",
+    ax_r5 = fig.add_subplot(gs[6, 0:2])
+    violin_panel(ax_r5, df_py, "mean_firing_rate",
                  "Firing rate (Hz)", PY_CTRL, PY_EXP, p_rate_py, log=True)
+    row_label(ax_r5, f"Pyramidal cells (n = {len(df_py)})")
     stats_out.append(f"Pyramidal cells, firing rate: LMM on log rate, animal random "
                      f"intercept, p = {p_rate_py:.4f}, beta = {b:+.3f} [{cl:+.3f}, "
                      f"{ch:+.3f}], n = {nc} cells from {nm} mice.")
 
+    # speed score was missing from the pyramidal row; added so that all three
+    # populations show the same three measures
+    p_ss_py, b, cl, ch, nc, nm = S.lmm_ci(df_py, "speed_z")
+    violin_panel(fig.add_subplot(gs[6, 2:4]), df_py, "speed_score",
+                 "Speed score", PY_CTRL, PY_EXP, p_ss_py)
+    stats_out.append(f"Pyramidal cells, speed score: LMM on Fisher-z(r), animal random "
+                     f"intercept, p = {p_ss_py:.4f}, beta = {b:+.3f} [{cl:+.3f}, "
+                     f"{ch:+.3f}], n = {nc} cells from {nm} mice.")
+
     orr, cl, ch, p_frac_py = glmm_binary(df_py)
-    stacked_panel(fig.add_subplot(gs[5, 5]), df_py,
+    stacked_panel(fig.add_subplot(gs[6, 4:6]), df_py,
                   [[PY_CTRL, "#C7D7FD"], [PY_EXP, "#FDC7C7"]], p_frac_py)
     pc = 100 * df_py[df_py.group_ani == "control"]["is_speed"].mean()
     pe = 100 * df_py[df_py.group_ani == "exp"]["is_speed"].mean()
@@ -348,6 +381,33 @@ def main():
                      f"OR = {orr:.2f} [{cl:.2f}, {ch:.2f}], n = {len(df_py)} cells "
                      f"from {df_py.animal_id.nunique()} mice.")
 
+    # ---- row 6: wide-spiking interneurons, the second interneuron class
+    p_rate_w, b, cl, ch, nc, nm = S.lmm_ci(df_wide, "log_rate")
+    ax_r6 = fig.add_subplot(gs[7, 0:2])
+    violin_panel(ax_r6, df_wide, "mean_firing_rate",
+                 "Firing rate (Hz)", WIDE_CTRL, WIDE_EXP, p_rate_w, log=True)
+    row_label(ax_r6, f"Wide-spiking interneurons (n = {len(df_wide)})")
+    stats_out.append(f"Wide-spiking interneurons, firing rate: LMM on log rate, animal "
+                     f"random intercept, p = {p_rate_w:.4f}, beta = {b:+.3f} "
+                     f"[{cl:+.3f}, {ch:+.3f}], n = {nc} cells from {nm} mice.")
+
+    p_ss_w, b, cl, ch, nc, nm = S.lmm_ci(df_wide, "speed_z")
+    violin_panel(fig.add_subplot(gs[7, 2:4]), df_wide, "speed_score",
+                 "Speed score", WIDE_CTRL, WIDE_EXP, p_ss_w)
+    stats_out.append(f"Wide-spiking interneurons, speed score: LMM on Fisher-z(r), animal "
+                     f"random intercept, p = {p_ss_w:.4f}, beta = {b:+.3f} "
+                     f"[{cl:+.3f}, {ch:+.3f}], n = {nc} cells from {nm} mice.")
+
+    orr, cl, ch, p_frac_w = glmm_binary(df_wide)
+    stacked_panel(fig.add_subplot(gs[7, 4:6]), df_wide,
+                  [[WIDE_CTRL, "#B8E6E6"], [WIDE_EXP, "#E6B8E2"]], p_frac_w)
+    pc = 100 * df_wide[df_wide.group_ani == "control"]["is_speed"].mean()
+    pe = 100 * df_wide[df_wide.group_ani == "exp"]["is_speed"].mean()
+    stats_out.append(f"Wide-spiking interneurons, speed-cell fraction: {pc:.1f}% vs "
+                     f"{pe:.1f}%, binomial GLMM, animal random intercept, "
+                     f"p = {p_frac_w:.4f}, OR = {orr:.2f} [{cl:.2f}, {ch:.2f}], "
+                     f"n = {len(df_wide)} cells from {df_wide.animal_id.nunique()} mice.")
+
     fig.subplots_adjust(top=0.92, bottom=0.08, left=0.1, right=0.95,
                         hspace=1.1, wspace=1.3)
     plt.tight_layout()
@@ -355,9 +415,10 @@ def main():
     fig.savefig(STEM + ".pdf", transparent=True, dpi=1200, bbox_inches="tight")
     print("wrote", STEM + ".png / .pdf\n")
 
-    stats_out.append(f"Speed-cell criterion: |r| above the {S.SHUFFLE_PCT}th "
-                     f"percentile of that cell's own 100 shuffles. Pooled shuffle "
-                     f"threshold shown as the dashed line = {thr:.3f}.")
+    stats_out.append(f"Speed-cell criterion: |speed score| > {S.FIXED_CUT} "
+                     f"(Gois & Tort, Cell Reports 2018), shown as the dashed lines. "
+                     f"Our own |speed score| distribution is bimodal with a trough at "
+                     f"0.30-0.40, reproducing that study's structure.")
     stats_out.append(f"Speed cells: {fr_py:.1f}% of pyramidal cells, "
                      f"{fr_int:.1f}% of interneurons.")
     for line in stats_out:
